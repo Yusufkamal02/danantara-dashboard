@@ -45,10 +45,14 @@ operasional Danantara — lihat §3.
 | 4 | Setup: repo baru, Next.js scaffold, Supabase project, akun Vercel | Belum mulai |
 | 5 | Implementasi: skema DB, halaman dashboard, job ingestion harga saham | Belum mulai |
 | 6 | Implementasi: job ingestion laporan keuangan (API terstruktur + AI-extraction dengan review gate) | Belum mulai |
-| 7 | Integrasi halaman "Tanya AI" ke servis tim AI Engineer (§7) — menunggu servis mereka siap & diarahkan ke dokumen Danantara | Belum mulai, dependency eksternal |
-| 8 | Testing & validasi manual data vs laporan resmi | Belum mulai |
-| 9 | Deploy MVP ke Vercel, akses internal Danantara | Belum mulai |
-| 10 | Evaluasi MVP → rencanakan fase berikutnya (export PDF/Excel, lebih banyak perusahaan, akses eksternal, dst) | Belum mulai |
+| 7 | Testing & validasi manual data vs laporan resmi | Belum mulai |
+| 8 | Deploy MVP ke Vercel, akses internal Danantara | Belum mulai |
+| 9 | Evaluasi MVP → rencanakan fase berikutnya (export PDF/Excel, lebih banyak perusahaan, akses eksternal, dst) | Belum mulai |
+| — | Integrasi halaman "Tanya AI" ke servis tim AI Engineer (§7) — **paralel, tidak menghalangi tahap 6–9 di atas** | Belum mulai, dependency eksternal |
+
+Tahap tanpa nomor ("Tanya AI") sengaja tidak diberi urutan sequential —
+ia berjalan paralel dan boleh menyusul kapan saja setelah servis tim
+AI Engineer siap, tanpa menunda testing atau deploy MVP dashboard utama.
 
 Tahap 1–2 dikerjakan lewat proses brainstorming terstruktur (riset →
 opsi arsitektur → persetujuan section-by-section) sebelum satu baris
