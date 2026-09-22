@@ -2,109 +2,141 @@
 
 - **Status:** Approved for implementation planning
 - **Date:** 2026-09-22
-- **Author:** Yusuf (with Claude)
-- **Scope:** MVP — Top 10 companies under Danantara
+- **Author:** Yusuf & Claude (approved via brainstorming session in chat)
+- **Scope:** MVP — 13 publicly listed companies under Danantara (BKI holding)
 
 ## 1. Background & Goals
 
 Danantara (Badan Pengelola Investasi Daya Anagata Nusantara) adalah lembaga
 pengelola investasi negara yang menaungi puluhan BUMN. Proyek ini membangun
-dashboard internal yang menyajikan data pasar saham dan laporan
-keuangan dari perusahaan-perusahaan di bawah Danantara — **bukan** platform
-trading (tidak ada eksekusi order/alat perdagangan), murni untuk
-visualisasi index/chart saham dan report.
+dashboard internal yang menyajikan data pasar saham dan laporan keuangan
+dari perusahaan-perusahaan di bawah Danantara — **bukan** platform trading
+(tidak ada eksekusi order/alat perdagangan), murni untuk visualisasi
+index/chart saham dan report.
 
-**Use case pertama (MVP):** Top 10 perusahaan BUMN dengan kapitalisasi
-pasar terbesar yang sahamnya sudah dialihkan ke Danantara (via PT BKI).
+**Use case pertama (MVP):** seluruh 13 perusahaan BUMN yang sahamnya (Seri
+B) telah dialihkan ke PT Biro Klasifikasi Indonesia (BKI) sebagai holding
+operasional Danantara, berdasarkan PP No. 15 Tahun 2025.
 
 **Goals:**
-- Menyediakan dashboard index/harga saham near-real-time untuk 10
-  perusahaan tersebut.
-- Menyediakan report (chart + narasi) berbasis laporan keuangan resmi,
+- Menyediakan dashboard harga saham/index near-real-time (delayed ~15
+  menit) untuk 13 perusahaan tersebut.
+- Menyediakan report (chart + ringkasan) berbasis laporan keuangan resmi,
   dengan data yang bisa dilacak sumbernya (source of truth).
-- Data ingestion otomatis dan terjadwal, bukan input manual.
+- Ingestion harga saham **dan** laporan keuangan otomatis & terjadwal
+  (bukan input manual) — sesuai kebutuhan efisiensi workflow Danantara.
 
 **Non-goals (di luar scope MVP ini):**
 - Tidak ada fitur trading/order execution.
-- Tidak ada akses publik/eksternal — v1 hanya internal Danantara.
-- Tidak mencakup seluruh portfolio BUMN Danantara, hanya Top 10.
+- Tidak ada akses publik/eksternal — v1 hanya internal Danantara, dengan
+  login.
+- Tidak ada export PDF/Excel di v1 (tampil di layar saja); bisa menyusul
+  di fase berikutnya.
+- Tidak mencakup seluruh portfolio BUMN Danantara, hanya 13 emiten yang
+  sahamnya sudah dialihkan ke BKI.
 
-## 2. Top 10 Companies (Seed List)
+## 2. Scope: 13 Companies (Verified List)
 
-Diverifikasi dari 14 emiten BUMN yang telah mengalihkan saham Seri B ke
-Danantara (per Tempo, Media Indonesia, Katadata, IDN Times, Feb–Mar 2025),
-dipersempit ke 10 berdasarkan kapitalisasi pasar & likuiditas:
+Diverifikasi dari sumber berita resmi tentang pengalihan saham Seri B ke
+BKI per PP No. 15/2025 (per 26 Maret 2025):
 
-| Ticker | Perusahaan | Sektor |
-|---|---|---|
-| BBRI | Bank Rakyat Indonesia | Perbankan |
-| BMRI | Bank Mandiri | Perbankan |
-| BBNI | Bank Negara Indonesia | Perbankan |
-| BBTN | Bank Tabungan Negara | Perbankan |
-| TLKM | Telkom Indonesia | Telekomunikasi |
-| ANTM | Aneka Tambang (anak usaha MIND ID) | Pertambangan |
-| PTBA | Bukit Asam (anak usaha MIND ID) | Pertambangan |
-| TINS | Timah (anak usaha MIND ID) | Pertambangan |
-| JSMR | Jasa Marga | Infrastruktur |
-| SMGR | Semen Indonesia | Industri |
+| Ticker | Perusahaan | Sektor | % Saham Seri B dialihkan |
+|---|---|---|---|
+| BBRI | Bank Rakyat Indonesia | Perbankan | 53.19% |
+| BMRI | Bank Mandiri | Perbankan | 52.00% |
+| BBNI | Bank Negara Indonesia | Perbankan | 60.00% |
+| BBTN | Bank Tabungan Negara | Perbankan | 60.00% |
+| TLKM | Telkom Indonesia | Telekomunikasi | 52.09% |
+| SMGR | Semen Indonesia | Industri | 51.20% |
+| JSMR | Jasa Marga | Infrastruktur | 70.00% |
+| WIKA | Wijaya Karya | Konstruksi | 91.01% |
+| WSKT | Waskita Karya | Konstruksi | 75.35% |
+| PTPP | PP (Persero) | Konstruksi | 51.00% |
+| ADHI | Adhi Karya | Konstruksi | 64.33% |
+| KRAS | Krakatau Steel | Industri | 80.00% |
+| GIAA | Garuda Indonesia | Transportasi | 64.53% |
 
-Daftar ini adalah **seed data**, dikonfirmasi user, disimpan sebagai
-initial rows di tabel `companies`. Tidak hardcode angka finansial —
-semua angka revenue/laba/aset ditarik oleh pipeline ingestion dari
-sumber resmi (lihat §5), bukan dari riset chat ini.
+Catatan: Danareksa juga menyerahkan saham ke BKI tapi **tidak tercatat di
+BEI** (tidak punya ticker), sehingga tidak relevan untuk chart harga
+saham dan dikeluarkan dari scope dashboard ini.
+
+Sumber (diverifikasi ulang langsung dari berita, bukan hasil riset
+subagent yang sebelumnya keliru menyertakan ANTM/PTBA/TINS — perusahaan
+tersebut adalah anak usaha MIND ID, bukan bagian dari pengalihan saham
+ke BKI ini):
+- [Tempo — Daftar 14 Emiten BUMN](https://www.tempo.co/ekonomi/daftar-14-emiten-bumn-yang-alihkan-saham-ke-holding-danantara-1224485)
+- [CNN Indonesia — Daftar 14 BUMN](https://www.cnnindonesia.com/ekonomi/20250327112854-92-1213631/daftar-14-bumn-yang-sudah-alihkan-saham-ke-danantara)
+- [Hukumonline — PT BKI Jadi Kendaraan Danantara](https://www.hukumonline.com/berita/a/pt-bki-jadi-kendaraan-danantara--berikut-14-emiten-bumn-yang-alihkan-saham-ke-holding-lt67e4e49b03a5d/)
+
+Daftar ini disimpan sebagai seed data di tabel `companies`. Angka
+finansial (revenue/laba/aset) **tidak** disimpan sebagai hasil riset
+chat ini — semua ditarik oleh pipeline ingestion otomatis dari sumber
+resmi (lihat §5).
 
 ## 3. Architecture Overview
 
+Satu repo Next.js, tanpa servis backend terpisah — semua ingestion
+berjalan sebagai scheduled route handlers (Vercel Cron) di repo yang
+sama.
+
 ```
-                     ┌─────────────────────────────┐
-                     │   GitHub Actions (cron)      │
-                     │  ┌─────────────────────────┐ │
-                     │  │  LangGraph ingestion job │ │
-                     │  │  (Python)                │ │
-                     │  └───────────┬─────────────┘ │
-                     └──────────────┼───────────────┘
-                                    │ writes
-                                    ▼
-                     ┌─────────────────────────────┐
-                     │   Supabase (Postgres + Auth) │
-                     └──────────────┬──────────────┘
-                                    │ reads
-                                    ▼
-                     ┌─────────────────────────────┐
-                     │  Next.js app (Vercel)        │
-                     │  - Server Components (UI)    │
-                     │  - Route Handlers (internal   │
-                     │    API for client widgets)    │
-                     │  - Supabase Auth (login)      │
-                     └─────────────────────────────┘
+                Vercel Cron (scheduled route handlers, repo sama)
+   ┌──────────────────────────────────────────────────────────────┐
+   │ Job 1: Harga saham (±15 menit, jam bursa 09:00–16:00 WIB)     │
+   │   → API pihak ketiga (GOAPI.io → upgrade Invezgo/Sectors.app) │
+   │   → upsert price_snapshots                                    │
+   │                                                                │
+   │ Job 2: Fundamental terstruktur (mingguan)                     │
+   │   → Sectors.app API (financials endpoint)                     │
+   │   → upsert financial_reports (status='verified', auto-publish)│
+   │                                                                │
+   │ Job 3: AI-extraction dokumen resmi (mingguan, pelengkap Job 2) │
+   │   → fetch filing resmi IDX / IR perusahaan                    │
+   │   → Claude API ekstrak angka + kutipan sumber                 │
+   │   → validasi skema & anomali (lonjakan >50% ditandai)         │
+   │   → upsert financial_reports (status='needs_review' default)  │
+   └───────────────────────────┬────────────────────────────────────┘
+                                │ writes
+                                ▼
+                 ┌─────────────────────────────┐
+                 │   Supabase (Postgres + Auth) │
+                 └──────────────┬──────────────┘
+                                │ reads
+                                ▼
+                 ┌─────────────────────────────┐
+                 │  Next.js app (Vercel)        │
+                 │  - Server Components (UI)    │
+                 │  - Supabase Auth (login)      │
+                 └─────────────────────────────┘
 ```
 
-Prinsip pemisahan: **ingestion (LangGraph) dan presentation (Next.js)
-tidak saling memanggil langsung** — satu-satunya kontrak di antara
-keduanya adalah skema database Supabase. Ini membuat masing-masing bisa
-dikembangkan, di-deploy, dan di-debug independen.
+**Prinsip inti:** jalur data vendor terstruktur (Job 2, Sectors.app)
+auto-publish karena sudah divalidasi pihak ketiga yang kredibel. Jalur
+AI-extraction (Job 3) — untuk field yang tidak tercakup Job 2 — selalu
+lewat review gate manusia sebelum tayang, karena ekstraksi LLM dari
+dokumen tidak terstruktur punya risiko salah baca. Ini menjaga "otomatis"
+tidak mengorbankan "valid", sesuai permintaan eksplisit Danantara.
 
 ## 4. Components
 
 ### 4.1 Frontend/App — Next.js (Vercel)
 - Next.js App Router, Server Components untuk halaman dashboard (index
   chart, tabel harga, halaman report per perusahaan).
-- Route Handlers untuk API internal yang dipakai client-side widgets
-  (misal refresh chart tanpa reload halaman).
-- Autentikasi via Supabase Auth (email/password), v1 satu role
-  (internal Danantara viewer) — tanpa tingkatan akses berbeda.
-- Chart/visualisasi: didesain mengikuti skill `dataviz` saat tahap
-  build (palet warna, aksesibilitas, konsistensi light/dark).
-- Export report ke PDF per perusahaan/periode.
+- Route Handlers untuk API internal (client-side widget refresh) **dan**
+  untuk 3 scheduled ingestion job di atas (dipicu Vercel Cron).
+- Autentikasi via Supabase Auth (email/password), v1 satu role (internal
+  Danantara viewer) — tanpa tingkatan akses berbeda.
+- Chart/visualisasi: didesain mengikuti skill `dataviz` saat tahap build
+  (palet warna, aksesibilitas, konsistensi light/dark).
 
 ### 4.2 Database — Supabase (Postgres)
-Skema inti:
 
 ```sql
 companies (
   ticker text primary key,
   name text not null,
   sector text not null,
+  pct_shares_transferred numeric,
   logo_url text
 )
 
@@ -113,97 +145,94 @@ price_snapshots (
   ticker text references companies(ticker),
   price numeric not null,
   volume bigint,
-  captured_at timestamptz not null
+  captured_at timestamptz not null,
+  source text not null              -- nama provider API
 )
 
 financial_reports (
   id bigserial primary key,
   ticker text references companies(ticker),
-  period text not null,          -- e.g. 'FY2025', 'Q3-2026'
+  period text not null,             -- e.g. 'FY2025', 'Q3-2026'
   revenue numeric,
   net_profit numeric,
   total_assets numeric,
-  source_url text not null,       -- link ke dokumen resmi
+  source_url text not null,         -- link ke dokumen/API resmi
+  extraction_method text not null,  -- 'api' | 'ai'
+  as_of_date date not null,
   extracted_at timestamptz not null,
   status text not null default 'needs_review'  -- 'verified' | 'needs_review'
 )
 ```
 
-### 4.3 Data Ingestion — LangGraph (Python, scheduled)
-Dijalankan sebagai scheduled job via **GitHub Actions** (bukan server
-yang nyala 24/7 — menghindari biaya & maintenance infra tambahan untuk
-MVP). Dua graph terpisah:
+### 4.3 Data Source — Harga Saham
+MVP: **GOAPI.io** (free tier, REST API khusus IDX) sebagai sumber awal.
+Upgrade ke **Invezgo** (fitur real-time terluas: price/volume/order
+book/broker summary) atau **Sectors.app** bila delay/coverage GOAPI
+tidak cukup. Yahoo Finance (`.JK` ticker) **tidak** dipakai untuk data
+yang ditampilkan ke user — tidak resmi, rawan rate-limit/berubah
+sewaktu-waktu, hanya boleh untuk prototyping lokal.
 
-**Graph A — Harga saham** (tiap 15 menit, jam bursa 09:00–16:00 WIB):
-1. `fetch_prices` — tool call ke data API (lihat §5) untuk 10 ticker.
-2. `normalize` — validasi schema & rentang wajar (sanity check).
-3. `upsert_supabase` — tulis ke `price_snapshots`.
-4. Retry edge: jika API gagal/rate-limited, retry dengan backoff; jika
-   tetap gagal, log kegagalan (lihat §7) tanpa menulis data parsial.
+Real-time murni (tick-by-tick) memerlukan lisensi resmi IDX Data
+Services yang enterprise-grade (kontrak tahunan, biaya signifikan) — di
+luar scope MVP. Delay ~15 menit standar untuk dashboard report (bukan
+trading) dan akan ditampilkan jujur di UI ("data delayed ~15 min").
 
-**Graph B — Laporan keuangan** (mingguan):
-1. `fetch_filing` — ambil dokumen resmi terbaru (IDX filing / IR
-   perusahaan) per ticker.
-2. `extract_financials` — LLM (Claude, via Anthropic API) mengekstrak
-   revenue/laba/total aset dari dokumen tidak terstruktur (PDF/HTML),
-   dengan reasoning untuk cross-check angka antar bagian laporan.
-3. `validate` — schema check + sanity-range check terhadap laporan
-   periode sebelumnya (mis. lonjakan >500% ditandai anomali).
-4. `upsert_supabase` — simpan dengan `status='needs_review'` jika
-   validasi tidak lolos penuh, `status='verified'` jika lolos semua
-   check. `needs_review` tidak tampil di dashboard sampai direview
-   manual — mencegah angka AI-extracted yang salah tayang tanpa cek.
-
-### 4.4 Data Source — Harga Saham
-Rekomendasi: **Sectors.app** (API khusus Indonesia, mencakup harga +
-fundamentals, coverage 99% IDX) sebagai sumber utama — perlu daftar
-akun untuk konfirmasi harga plan "Insider"-nya di tahap implementasi.
-Yahoo Finance (`.JK` ticker via `yfinance`) boleh dipakai sebagai
-fallback gratis **hanya untuk prototyping awal**, tidak untuk data yang
-ditampilkan ke user karena sifatnya tidak resmi (rawan rate-limit/
-berubah sewaktu-waktu).
+### 4.4 Data Source — Laporan Keuangan
+- **Job 2 (utama, terstruktur):** Sectors.app — coverage 99% IDX untuk
+  fundamentals/financials, data sudah terstruktur (bukan hasil ekstraksi
+  teks), auto-publish karena sudah divalidasi vendor. Perlu konfirmasi
+  harga plan "Insider" (butuh signup) di awal implementasi.
+- **Job 3 (pelengkap, AI-extraction):** untuk field yang tidak tercakup
+  Sectors.app — fetch dokumen resmi (IDX filing / laporan tahunan
+  perusahaan), ekstraksi via Claude API dengan output terstruktur +
+  kutipan sumber, validasi skema & sanity-range check terhadap periode
+  sebelumnya, default `status='needs_review'`. **Tidak tayang di
+  dashboard sampai direview manual** oleh tim Danantara.
 
 ## 5. Error Handling & Data Trust
 
-- Setiap record finansial menyimpan `source_url` + `extracted_at` —
-  dashboard bisa menampilkan "Sumber: [link]" di setiap angka.
-- Extraction AI yang tidak lolos validasi masuk status `needs_review`,
-  tidak otomatis tampil — mencegah AI hallucination sampai ke user
-  tanpa verifikasi manusia.
+- Setiap record finansial menyimpan `source_url`, `as_of_date`,
+  `extraction_method`, dan `status` — dashboard menampilkan "Sumber:
+  [link]" di setiap angka, dan badge status untuk angka yang masih
+  `needs_review` (tidak tampil ke viewer biasa, hanya ke reviewer).
 - Jika ingestion harga gagal berturut-turut, UI menampilkan indikator
-  "data terakhir diperbarui [waktu]" di dashboard, bukan diam-diam
-  menampilkan data basi seolah terkini.
-- GitHub Actions run failures mengirim notifikasi (GitHub Actions
-  built-in email/Slack notification) ke tim.
+  "data terakhir diperbarui [waktu]", bukan diam-diam menampilkan data
+  basi seolah terkini. Data lama tidak ditimpa oleh fetch yang gagal.
+- Anomali finansial (lonjakan >50% dari periode sebelumnya) otomatis
+  ditandai `needs_review` + notifikasi ke tim, walau sumbernya API
+  terstruktur.
+- Kegagalan cron job (Vercel Cron) dikirim notifikasi ke tim (email/
+  Slack via integration Vercel).
 
 ## 6. Testing Strategy
 
-- Unit test untuk fungsi `normalize` dan `validate` (kasus data
-  valid, out-of-range, malformed).
-- Integration test untuk Route Handlers Next.js (mock Supabase).
-- Validasi manual: sebelum go-live, angka dashboard untuk 10
-  perusahaan dicocokkan manual terhadap laporan resmi IDX/perusahaan.
-- LangGraph graph diuji di staging Supabase project terpisah sebelum
-  dijadwalkan ke production.
+- Unit test untuk fungsi validasi/normalisasi & pengecekan anomali
+  (kasus data valid, out-of-range, malformed).
+- Integration test untuk Route Handlers (mock Supabase & API eksternal).
+- Validasi manual: sebelum go-live, angka dashboard untuk 13 perusahaan
+  dicocokkan manual terhadap laporan resmi IDX/perusahaan.
+- Job 1–3 diuji di staging Supabase project terpisah sebelum dijadwalkan
+  ke production.
 
 ## 7. Deployment
 
 - Repo Git baru, terpisah dari repo Aura_Analytics lainnya.
-- Next.js app → Vercel (custom domain menyusul).
+- Next.js app + cron jobs → Vercel (custom domain menyusul).
 - Supabase project (production + staging).
-- LangGraph ingestion → GitHub Actions scheduled workflow di repo yang
-  sama, terpisah folder (`/ingestion`) dari app Next.js (`/app` atau
-  root Next.js project).
 
 ## 8. Open Risks
 
-- **Harga Sectors.app API** belum dikonfirmasi (halaman pricing
-  memerlukan login) — perlu dikonfirmasi di awal implementasi sebelum
-  komit ke provider ini; jika terlalu mahal, Twelve Data adalah
-  alternatif (coverage IDX lebih umum, bukan Indonesia-khusus).
-- **Delay data**: "real-time" murni (tick-by-tick) memerlukan lisensi
-  resmi IDX yang mahal; MVP ini menggunakan polling 15 menit yang
-  standar untuk dashboard report (bukan trading).
-- **Kualitas ekstraksi AI** dari laporan keuangan bervariasi tergantung
-  format dokumen resmi (PDF scan vs text-native) — perlu diuji dengan
-  sample laporan riil di awal implementasi.
+- **Harga Sectors.app API** belum dikonfirmasi (halaman pricing perlu
+  login) — perlu dikonfirmasi di awal implementasi sebelum komit;
+  GOAPI.io free tier bisa jadi fallback murah.
+- **Kualitas Job 3 (AI-extraction)** bervariasi tergantung format
+  dokumen resmi (PDF scan vs text-native) — perlu diuji dengan sample
+  laporan riil di awal implementasi. Review gate manual adalah mitigasi
+  utama risiko ini.
+- **Delay data harga**: real-time murni perlu lisensi resmi IDX yang
+  mahal; MVP pakai polling ~15 menit, ditampilkan jujur ke user.
+- Insiden proses: draft spec pertama untuk dokumen ini ditulis sepihak
+  oleh subagent riset yang mengabaikan instruksi (lihat riwayat commit
+  git) dan berisi daftar perusahaan yang keliru (ANTM/PTBA/TINS bukan
+  bagian dari BKI/Danantara). Dokumen ini menggantikannya sepenuhnya
+  setelah proses persetujuan yang benar.
