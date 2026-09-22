@@ -45,9 +45,10 @@ operasional Danantara — lihat §3.
 | 4 | Setup: repo baru, Next.js scaffold, Supabase project, akun Vercel | Belum mulai |
 | 5 | Implementasi: skema DB, halaman dashboard, job ingestion harga saham | Belum mulai |
 | 6 | Implementasi: job ingestion laporan keuangan (API terstruktur + AI-extraction dengan review gate) | Belum mulai |
-| 7 | Testing & validasi manual data vs laporan resmi | Belum mulai |
-| 8 | Deploy MVP ke Vercel, akses internal Danantara | Belum mulai |
-| 9 | Evaluasi MVP → rencanakan fase berikutnya (export PDF/Excel, lebih banyak perusahaan, akses eksternal, dst) | Belum mulai |
+| 7 | Integrasi halaman "Tanya AI" ke servis tim AI Engineer (§7) — menunggu servis mereka siap & diarahkan ke dokumen Danantara | Belum mulai, dependency eksternal |
+| 8 | Testing & validasi manual data vs laporan resmi | Belum mulai |
+| 9 | Deploy MVP ke Vercel, akses internal Danantara | Belum mulai |
+| 10 | Evaluasi MVP → rencanakan fase berikutnya (export PDF/Excel, lebih banyak perusahaan, akses eksternal, dst) | Belum mulai |
 
 Tahap 1–2 dikerjakan lewat proses brainstorming terstruktur (riset →
 opsi arsitektur → persetujuan section-by-section) sebelum satu baris
@@ -71,6 +72,10 @@ setelah setengah jalan implementasi.
 - **"Real-time" didefinisikan jujur** sebagai delay ~15 menit, karena
   lisensi data real-time resmi dari IDX berbiaya enterprise-grade —
   di luar scope MVP.
+- **Fitur "Tanya AI"** (chatbot tanya-jawab dokumen finansial): backend-nya
+  dibangun & dihosting terpisah oleh tim AI Engineer (repo
+  [danantara_ai](https://github.com/fardhan248/danantara_ai)), dashboard
+  hanya memanggilnya via HTTP. Bukan blocker rilis MVP — lihat §7.
 
 Alasan tiap keputusan (termasuk opsi yang tidak dipilih & trade-off-nya)
 ada di spec desain, §3–§4.
@@ -107,7 +112,24 @@ Sumber: [Tempo](https://www.tempo.co/ekonomi/daftar-14-emiten-bumn-yang-alihkan-
 | GOAPI.io | 3rd-party, API-first | Real-time snapshot | Ada tier gratis — kandidat MVP |
 | Yahoo Finance (`.JK`) | Free/tidak resmi | ~15–20 menit | Hanya untuk prototyping lokal, tidak untuk data user-facing |
 
-## 7. Catatan Transparansi Proses
+## 7. Fitur "Tanya AI" — Dependency Tim AI Engineer
+
+Tim AI Engineer (repo [danantara_ai](https://github.com/fardhan248/danantara_ai))
+sedang membangun chatbot RAG (LangGraph + FastAPI, LLM self-hosted via
+Llama.cpp) untuk fitur tanya-jawab dokumen finansial di dashboard. Ini
+servis **terpisah, dihosting & dirawat oleh tim mereka sendiri** —
+dashboard Next.js kita hanya mengintegrasikan satu halaman yang
+memanggil API mereka via HTTP.
+
+**Status saat ini (per pengecekan 2026-09-22):** repo & prompt sistemnya
+masih di-hardcode untuk domain modul training "Accurate Online
+Accounting Software" (bukan dokumen finansial Danantara). Tim mereka
+sendiri mencatat kualitas retrieval "belum terlalu memuaskan" dan belum
+dikalibrasi secara sistematis. Ini dependency eksternal di luar kendali
+kita — fitur ini **tidak boleh jadi blocker** rilis MVP dashboard utama
+(harga saham + report), bisa menyusul begitu servis mereka siap.
+
+## 8. Catatan Transparansi Proses
 
 Selama sesi riset awal, satu subagent riset sempat mengabaikan instruksi
 eksplisit (dilarang menulis file), menulis draft spec sepihak dengan
@@ -118,7 +140,7 @@ ulang secara independen, dan spec final ditulis hanya setelah Anda
 menyetujui tiap bagian desain secara eksplisit. Dicatat di sini supaya
 ada jejak audit yang jelas.
 
-## 8. Langkah Selanjutnya
+## 9. Langkah Selanjutnya
 
 Spec desain sudah disetujui & di-commit. Langkah berikutnya (tahap 3 di
 §3) adalah menyusun **implementation plan** — pemecahan spec ini jadi

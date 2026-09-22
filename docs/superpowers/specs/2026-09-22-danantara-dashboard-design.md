@@ -107,8 +107,22 @@ sama.
                  │  Next.js app (Vercel)        │
                  │  - Server Components (UI)    │
                  │  - Supabase Auth (login)      │
+                 └──────────────┬──────────────┘
+                                │ HTTP (halaman "Tanya AI" saja)
+                                ▼
+                 ┌─────────────────────────────┐
+                 │  AI Chatbot Service           │
+                 │  (repo: danantara_ai,         │
+                 │  di-host & dirawat terpisah   │
+                 │  oleh tim AI Engineer)        │
                  └─────────────────────────────┘
 ```
+
+Servis chatbot AI **bukan** bagian dari deployment kita — dihosting &
+dirawat sepenuhnya oleh tim AI Engineer (repo terpisah:
+[danantara_ai](https://github.com/fardhan248/danantara_ai)). Dashboard
+Next.js hanya memanggilnya via HTTP dari satu halaman fitur ("Tanya
+AI"), tidak terlibat sama sekali dalam Job 1/2/3 di atas.
 
 **Prinsip inti:** jalur data vendor terstruktur (Job 2, Sectors.app)
 auto-publish karena sudah divalidasi pihak ketiga yang kredibel. Jalur
@@ -189,6 +203,28 @@ trading) dan akan ditampilkan jujur di UI ("data delayed ~15 min").
   sebelumnya, default `status='needs_review'`. **Tidak tayang di
   dashboard sampai direview manual** oleh tim Danantara.
 
+### 4.5 Tanya AI (fitur chat, servis eksternal)
+Halaman baru di dashboard: user bisa tanya bebas soal laporan
+keuangan/dokumen resmi perusahaan, dijawab dengan sitasi nomor halaman.
+Backend-nya adalah servis chatbot RAG (LangGraph + FastAPI, LLM
+self-hosted via Llama.cpp) yang dibangun & dirawat tim AI Engineer di
+repo terpisah [danantara_ai](https://github.com/fardhan248/danantara_ai)
+— bukan bagian dari repo/deployment dashboard ini.
+
+- Halaman ini tetap di belakang login Supabase Auth yang sama dengan
+  sisa dashboard (bukan akses terpisah).
+- Next.js memanggil endpoint FastAPI servis tersebut via HTTP, base URL
+  & kredensial disimpan sebagai environment variable.
+- **Status saat ini (per riset 2026-09-22):** repo & prompt sistemnya
+  masih di-hardcode untuk domain modul training "Accurate Online
+  Accounting Software" — belum diarahkan ke dokumen finansial Danantara.
+  Tim AI Engineer yang bertanggung jawab mengarahkan ulang knowledge
+  base-nya; ini dependency eksternal, bukan task kita.
+- Fitur ini **tidak boleh jadi blocker rilis MVP** dashboard utama
+  (harga saham + report Job 1/2). Kalau servis belum siap/kualitas
+  retrieval belum memadai saat MVP rilis, halaman "Tanya AI" bisa
+  ditunda tayang tanpa menghambat fitur lain.
+
 ## 5. Error Handling & Data Trust
 
 - Setiap record finansial menyimpan `source_url`, `as_of_date`,
@@ -203,6 +239,10 @@ trading) dan akan ditampilkan jujur di UI ("data delayed ~15 min").
   terstruktur.
 - Kegagalan cron job (Vercel Cron) dikirim notifikasi ke tim (email/
   Slack via integration Vercel).
+- Jika servis "Tanya AI" (§4.5) down/timeout, halaman tersebut
+  menampilkan pesan error yang jelas ke user — tidak mem-block atau
+  memperlambat bagian dashboard lain (harga saham/report tetap jalan
+  independen).
 
 ## 6. Testing Strategy
 
@@ -231,6 +271,11 @@ trading) dan akan ditampilkan jujur di UI ("data delayed ~15 min").
   utama risiko ini.
 - **Delay data harga**: real-time murni perlu lisensi resmi IDX yang
   mahal; MVP pakai polling ~15 menit, ditampilkan jujur ke user.
+- **Dependency eksternal "Tanya AI"**: servis & knowledge base-nya
+  dikelola tim AI Engineer terpisah, di luar kendali/timeline kita.
+  Konten saat ini belum diarahkan ke dokumen Danantara, dan tim mereka
+  sendiri mencatat kualitas retrieval "belum terlalu memuaskan" —
+  perlu dikonfirmasi kesiapannya sebelum halaman ini ditayangkan.
 - Insiden proses: draft spec pertama untuk dokumen ini ditulis sepihak
   oleh subagent riset yang mengabaikan instruksi (lihat riwayat commit
   git) dan berisi daftar perusahaan yang keliru (ANTM/PTBA/TINS bukan
