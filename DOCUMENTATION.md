@@ -48,7 +48,7 @@ operasional Danantara — lihat §3.
 | 7 | Testing & validasi manual data vs laporan resmi | Belum mulai |
 | 8 | Deploy MVP ke Vercel, akses internal Danantara | Belum mulai |
 | 9 | Evaluasi MVP → rencanakan fase berikutnya (export PDF/Excel, lebih banyak perusahaan, akses eksternal, dst) | Belum mulai |
-| — | Integrasi halaman "Tanya AI" ke servis tim AI Engineer (§7) — **paralel, tidak menghalangi tahap 6–9 di atas** | Belum mulai, dependency eksternal |
+| — | Integrasi widget "Tanya AI" (di halaman dashboard yang sama) ke servis tim AI Engineer (§7) — **paralel, tidak menghalangi tahap 6–9 di atas** | Belum mulai, dependency eksternal |
 
 Tahap tanpa nomor ("Tanya AI") sengaja tidak diberi urutan sequential —
 ia berjalan paralel dan boleh menyusul kapan saja setelah servis tim
@@ -76,7 +76,8 @@ setelah setengah jalan implementasi.
 - **"Real-time" didefinisikan jujur** sebagai delay ~15 menit, karena
   lisensi data real-time resmi dari IDX berbiaya enterprise-grade —
   di luar scope MVP.
-- **Fitur "Tanya AI"** (chatbot tanya-jawab dokumen finansial): backend-nya
+- **Fitur "Tanya AI"** (chatbot tanya-jawab dokumen finansial): widget/
+  panel di halaman dashboard yang sama (bukan route terpisah), backend-nya
   dibangun & dihosting terpisah oleh tim AI Engineer (repo
   [danantara_ai](https://github.com/fardhan248/danantara_ai)), dashboard
   hanya memanggilnya via HTTP. Bukan blocker rilis MVP — lihat §7.
@@ -122,8 +123,9 @@ Tim AI Engineer (repo [danantara_ai](https://github.com/fardhan248/danantara_ai)
 sedang membangun chatbot RAG (LangGraph + FastAPI, LLM self-hosted via
 Llama.cpp) untuk fitur tanya-jawab dokumen finansial di dashboard. Ini
 servis **terpisah, dihosting & dirawat oleh tim mereka sendiri** —
-dashboard Next.js kita hanya mengintegrasikan satu halaman yang
-memanggil API mereka via HTTP.
+dashboard Next.js kita hanya mengintegrasikan satu widget/panel chat di
+halaman dashboard utama (bukan route terpisah) yang memanggil API
+mereka via HTTP.
 
 **Status saat ini (per pengecekan 2026-09-22):** repo & prompt sistemnya
 masih di-hardcode untuk domain modul training "Accurate Online

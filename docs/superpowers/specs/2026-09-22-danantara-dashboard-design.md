@@ -108,7 +108,8 @@ sama.
                  │  - Server Components (UI)    │
                  │  - Supabase Auth (login)      │
                  └──────────────┬──────────────┘
-                                │ HTTP (halaman "Tanya AI" saja)
+                                │ HTTP (widget "Tanya AI" di
+                                │ halaman dashboard yang sama)
                                 ▼
                  ┌─────────────────────────────┐
                  │  AI Chatbot Service           │
@@ -121,8 +122,9 @@ sama.
 Servis chatbot AI **bukan** bagian dari deployment kita — dihosting &
 dirawat sepenuhnya oleh tim AI Engineer (repo terpisah:
 [danantara_ai](https://github.com/fardhan248/danantara_ai)). Dashboard
-Next.js hanya memanggilnya via HTTP dari satu halaman fitur ("Tanya
-AI"), tidak terlibat sama sekali dalam Job 1/2/3 di atas.
+Next.js hanya memanggilnya via HTTP dari widget/panel "Tanya AI" yang
+menempel di halaman dashboard utama yang sama (bukan route/halaman
+terpisah), tidak terlibat sama sekali dalam Job 1/2/3 di atas.
 
 **Prinsip inti:** jalur data vendor terstruktur (Job 2, Sectors.app)
 auto-publish karena sudah divalidasi pihak ketiga yang kredibel. Jalur
@@ -203,16 +205,20 @@ trading) dan akan ditampilkan jujur di UI ("data delayed ~15 min").
   sebelumnya, default `status='needs_review'`. **Tidak tayang di
   dashboard sampai direview manual** oleh tim Danantara.
 
-### 4.5 Tanya AI (fitur chat, servis eksternal)
-Halaman baru di dashboard: user bisa tanya bebas soal laporan
-keuangan/dokumen resmi perusahaan, dijawab dengan sitasi nomor halaman.
-Backend-nya adalah servis chatbot RAG (LangGraph + FastAPI, LLM
-self-hosted via Llama.cpp) yang dibangun & dirawat tim AI Engineer di
-repo terpisah [danantara_ai](https://github.com/fardhan248/danantara_ai)
-— bukan bagian dari repo/deployment dashboard ini.
+### 4.5 Tanya AI (widget chat, servis eksternal)
+**Bukan route/halaman terpisah** — widget/panel chat yang menempel di
+halaman dashboard utama yang sama (mis. panel geser dari samping, atau
+bubble chat mengambang), supaya user tidak perlu pindah halaman untuk
+tanya jawab. User bisa tanya bebas soal laporan keuangan/dokumen resmi
+perusahaan, dijawab dengan sitasi nomor halaman. Backend-nya adalah
+servis chatbot RAG (LangGraph + FastAPI, LLM self-hosted via Llama.cpp)
+yang dibangun & dirawat tim AI Engineer di repo terpisah
+[danantara_ai](https://github.com/fardhan248/danantara_ai) — bukan
+bagian dari repo/deployment dashboard ini.
 
-- Halaman ini tetap di belakang login Supabase Auth yang sama dengan
-  sisa dashboard (bukan akses terpisah).
+- Widget ini tetap di belakang login Supabase Auth yang sama dengan
+  sisa dashboard (bukan akses terpisah, karena berada di halaman yang
+  sama).
 - Next.js memanggil endpoint FastAPI servis tersebut via HTTP, base URL
   & kredensial disimpan sebagai environment variable.
 - **Status saat ini (per riset 2026-09-22):** repo & prompt sistemnya
@@ -222,8 +228,8 @@ repo terpisah [danantara_ai](https://github.com/fardhan248/danantara_ai)
   base-nya; ini dependency eksternal, bukan task kita.
 - Fitur ini **tidak boleh jadi blocker rilis MVP** dashboard utama
   (harga saham + report Job 1/2). Kalau servis belum siap/kualitas
-  retrieval belum memadai saat MVP rilis, halaman "Tanya AI" bisa
-  ditunda tayang tanpa menghambat fitur lain.
+  retrieval belum memadai saat MVP rilis, widget "Tanya AI" bisa
+  disembunyikan dulu dari halaman dashboard tanpa menghambat fitur lain.
 
 ## 5. Error Handling & Data Trust
 
@@ -239,10 +245,10 @@ repo terpisah [danantara_ai](https://github.com/fardhan248/danantara_ai)
   terstruktur.
 - Kegagalan cron job (Vercel Cron) dikirim notifikasi ke tim (email/
   Slack via integration Vercel).
-- Jika servis "Tanya AI" (§4.5) down/timeout, halaman tersebut
+- Jika servis "Tanya AI" (§4.5) down/timeout, widget tersebut
   menampilkan pesan error yang jelas ke user — tidak mem-block atau
-  memperlambat bagian dashboard lain (harga saham/report tetap jalan
-  independen).
+  memperlambat rendering sisa halaman dashboard (harga saham/report
+  tetap jalan independen, widget di-load terpisah/async).
 
 ## 6. Testing Strategy
 

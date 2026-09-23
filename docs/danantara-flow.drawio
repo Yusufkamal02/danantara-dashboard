@@ -50,10 +50,10 @@
         </mxCell>
 
         <!-- ===== Dashboard + AI chatbot + user ===== -->
-        <mxCell id="dashboard" value="Next.js Dashboard (Vercel)&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Server Components &amp;middot; Supabase Auth &amp;middot; login internal&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#EEF0FC;strokeColor=#3F52C7;fontFamily=Helvetica;fontSize=13;fontStyle=1;fontColor=#14171C;" vertex="1" parent="1">
+        <mxCell id="dashboard" value="Next.js Dashboard (Vercel)&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Server Components &amp;middot; Supabase Auth &amp;middot; login internal&lt;br&gt;+ widget &amp;quot;Tanya AI&amp;quot; di halaman yang sama&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#EEF0FC;strokeColor=#3F52C7;fontFamily=Helvetica;fontSize=13;fontStyle=1;fontColor=#14171C;" vertex="1" parent="1">
           <mxGeometry x="60" y="590" width="560" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="chatbot" value="danantara_ai&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;halaman &amp;quot;Tanya AI&amp;quot;&lt;br&gt;tim AI Engineer &amp;middot; hosting terpisah&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F4EDFA;strokeColor=#8A4FBF;dashed=1;fontFamily=Helvetica;fontSize=13;fontStyle=1;fontColor=#14171C;" vertex="1" parent="1">
+        <mxCell id="chatbot" value="danantara_ai&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;backend widget &amp;quot;Tanya AI&amp;quot;&lt;br&gt;tim AI Engineer &amp;middot; hosting terpisah&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F4EDFA;strokeColor=#8A4FBF;dashed=1;fontFamily=Helvetica;fontSize=13;fontStyle=1;fontColor=#14171C;" vertex="1" parent="1">
           <mxGeometry x="680" y="590" width="240" height="70" as="geometry" />
         </mxCell>
         <mxCell id="user" value="Viewer Internal Danantara&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;login wajib, tanpa akses eksternal&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#EEF0FC;strokeColor=#3F52C7;fontFamily=Helvetica;fontSize=13;fontStyle=1;fontColor=#14171C;" vertex="1" parent="1">
