@@ -92,7 +92,8 @@ sama.
    │                                                                │
    │ Job 3: AI-extraction dokumen resmi (mingguan, pelengkap Job 2) │
    │   → fetch filing resmi IDX / IR perusahaan                    │
-   │   → Claude API ekstrak angka + kutipan sumber                 │
+   │   → LLM (provider dikonfigurasi, default Claude) ekstrak       │
+   │     angka + kutipan sumber                                     │
    │   → validasi skema & anomali (lonjakan >50% ditandai)         │
    │   → upsert financial_reports (status='needs_review' default)  │
    └───────────────────────────┬────────────────────────────────────┘
@@ -200,10 +201,17 @@ trading) dan akan ditampilkan jujur di UI ("data delayed ~15 min").
   harga plan "Insider" (butuh signup) di awal implementasi.
 - **Job 3 (pelengkap, AI-extraction):** untuk field yang tidak tercakup
   Sectors.app — fetch dokumen resmi (IDX filing / laporan tahunan
-  perusahaan), ekstraksi via Claude API dengan output terstruktur +
-  kutipan sumber, validasi skema & sanity-range check terhadap periode
-  sebelumnya, default `status='needs_review'`. **Tidak tayang di
-  dashboard sampai direview manual** oleh tim Danantara.
+  perusahaan), ekstraksi dengan output terstruktur + kutipan sumber,
+  validasi skema & sanity-range check terhadap periode sebelumnya,
+  default `status='needs_review'`. **Tidak tayang di dashboard sampai
+  direview manual** oleh tim Danantara — berlaku untuk provider LLM
+  manapun yang dipakai.
+  **Provider LLM dapat dikonfigurasi** (keputusan 2026-09-23): satu
+  provider aktif dalam satu waktu (bukan cross-check beberapa provider
+  sekaligus), dipilih lewat env var `EXTRACTION_PROVIDER` — default
+  Claude (`claude-opus-5`), bisa di-switch ke OpenAI (`gpt-6-astra`)
+  atau Gemini (`gemini-3.8-flash`) tanpa ubah kode lain, lewat satu
+  interface `DocumentExtractor` yang sama untuk ketiganya.
 
 ### 4.5 Tanya AI (widget chat, servis eksternal)
 **Bukan route/halaman terpisah** — widget/panel chat yang menempel di

@@ -20,7 +20,7 @@
 - Dashboard pages (browser/anon Supabase key) must never be able to read `financial_reports` rows with `status = 'needs_review'` — enforced at the database level via RLS, not just in application code (spec §5).
 - No export to PDF/Excel in this plan (spec Non-goals). No public/external access — every page requires a logged-in Supabase Auth session (spec §1).
 - `GOAPI.io` and `Sectors.app` are sign-up-gated APIs; this plan could not obtain their authenticated API reference during research (spec §8, "Open Risks"). Tasks 6 and 7 isolate that uncertainty to one fetch URL and one response-parsing line each — everything else in those tasks (validation, upsert, tests) does not depend on the exact vendor response shape and needs no rework once the real shape is confirmed.
-- Model for all Claude API calls: `claude-opus-5` (no other model was requested).
+- Job 3's LLM provider is configurable, not fixed — user decision 2026-09-23: one provider runs at a time (not a cross-check ensemble), selected via `EXTRACTION_PROVIDER` (`claude` default / `openai` / `gemini`), swappable without code changes. Per-provider models: Claude uses `claude-opus-5`, OpenAI uses `gpt-6-astra`, Gemini uses `gemini-3.8-flash` — each confirmed against that vendor's live docs on 2026-09-23 (spec §4.4, Task 8). Only the Claude adapter is cross-checked against a bundled SDK reference (the `claude-api` skill); the OpenAI and Gemini adapters are not, so re-verify their exact response shape against platform.openai.com and ai.google.dev before relying on them in production, the same way Task 6/7's vendor-shape caveat applies.
 
 ---
 
@@ -63,7 +63,12 @@ Danantara/
 │   │       ├── goapi.ts
 │   │       ├── sectors.ts
 │   │       ├── document-text.ts
-│   │       └── claude-extract.ts
+│   │       └── extraction/
+│   │           ├── types.ts        — ExtractedFinancials schema + DocumentExtractor interface
+│   │           ├── claude.ts       — ClaudeExtractor
+│   │           ├── openai.ts       — OpenAiExtractor
+│   │           ├── gemini.ts       — GeminiExtractor
+│   │           └── index.ts        — getDocumentExtractor() provider factory
 │   └── components/
 │       ├── StatusBadge.tsx
 │       ├── StaleIndicator.tsx
@@ -78,7 +83,11 @@ Danantara/
     │       ├── goapi.test.ts
     │       ├── sectors.test.ts
     │       ├── document-text.test.ts
-    │       └── claude-extract.test.ts
+    │       └── extraction/
+    │           ├── claude.test.ts
+    │           ├── openai.test.ts
+    │           ├── gemini.test.ts
+    │           └── index.test.ts
     ├── api/
     │   ├── cron-prices.test.ts
     │   ├── cron-fundamentals.test.ts
@@ -1307,17 +1316,28 @@ git commit -m "feat: add Job 2 structured fundamentals ingestion cron route"
 
 ---
 
-### Task 8: Job 3 — AI-Extraction with Review Gate
+### Task 8: Job 3 — AI-Extraction with Review Gate (Configurable Provider)
 
 **Files:**
-- Create: `src/lib/data-sources/document-text.ts`, `src/lib/data-sources/claude-extract.ts`, `src/app/api/cron/extract/route.ts`
-- Test: `tests/lib/data-sources/document-text.test.ts`, `tests/lib/data-sources/claude-extract.test.ts`, `tests/api/cron-extract.test.ts`
+- Create: `src/lib/data-sources/document-text.ts`
+- Create: `src/lib/data-sources/extraction/types.ts`, `claude.ts`, `openai.ts`, `gemini.ts`, `index.ts`
+- Create: `src/app/api/cron/extract/route.ts`
+- Modify: `.env.example`
+- Test: `tests/lib/data-sources/document-text.test.ts`, `tests/lib/data-sources/extraction/{claude,openai,gemini,index}.test.ts`, `tests/api/cron-extract.test.ts`
 
 **Interfaces:**
 - Consumes: `assertCronAuthorized` (Task 6), `COMPANIES` (Task 2), `checkFinancialAnomaly` (Task 5), `createServiceRoleClient` (Task 3), the `document_sources` table (Task 2).
-- Produces: `fetchDocumentText(url: string): Promise<string>`, `extractFinancialsFromDocument(documentText: string, companyName: string): Promise<ExtractedFinancials>`.
+- Produces: `fetchDocumentText(url: string): Promise<string>`.
+- Produces: `DocumentExtractor` interface (`extractFinancials(documentText: string, companyName: string): Promise<ExtractedFinancials>`) implemented by `ClaudeExtractor`, `OpenAiExtractor`, `GeminiExtractor`.
+- Produces: `getDocumentExtractor(provider?: string): DocumentExtractor` — reads `EXTRACTION_PROVIDER` env var when no argument is given, defaults to `"claude"`. This is the only entry point the cron route uses; it never imports a concrete extractor directly.
 
-- [ ] **Step 1: Write the failing test for document text extraction**
+- [ ] **Step 1: Install the new provider SDKs**
+
+```bash
+npm install openai @google/genai zod-to-json-schema
+```
+
+- [ ] **Step 2: Write the failing test for document text extraction**
 
 ```typescript
 // tests/lib/data-sources/document-text.test.ts
@@ -1350,12 +1370,12 @@ describe("fetchDocumentText", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Run test to verify it fails**
 
 Run: `npm test -- tests/lib/data-sources/document-text.test.ts`
 Expected: FAIL — `Cannot find module '@/lib/data-sources/document-text'`
 
-- [ ] **Step 3: Implement document text extraction**
+- [ ] **Step 4: Implement document text extraction**
 
 ```typescript
 // src/lib/data-sources/document-text.ts
@@ -1372,15 +1392,15 @@ export async function fetchDocumentText(url: string): Promise<string> {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 5: Run test to verify it passes**
 
 Run: `npm test -- tests/lib/data-sources/document-text.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Write the failing test for the Claude extraction client**
+- [ ] **Step 6: Write the failing test for the Claude extractor**
 
 ```typescript
-// tests/lib/data-sources/claude-extract.test.ts
+// tests/lib/data-sources/extraction/claude.test.ts
 import { describe, it, expect, vi } from "vitest";
 
 const parseMock = vi.fn().mockResolvedValue({
@@ -1397,10 +1417,10 @@ vi.mock("@anthropic-ai/sdk", () => ({
   default: vi.fn().mockImplementation(() => ({ messages: { parse: parseMock } })),
 }));
 
-describe("extractFinancialsFromDocument", () => {
+describe("ClaudeExtractor", () => {
   it("returns the parsed structured output", async () => {
-    const { extractFinancialsFromDocument } = await import("@/lib/data-sources/claude-extract");
-    const result = await extractFinancialsFromDocument("laporan tahunan teks...", "Bank Rakyat Indonesia");
+    const { ClaudeExtractor } = await import("@/lib/data-sources/extraction/claude");
+    const result = await new ClaudeExtractor().extractFinancials("laporan tahunan teks...", "Bank Rakyat Indonesia");
     expect(result).toEqual({
       period: "FY2025",
       revenue: 100000,
@@ -1408,33 +1428,29 @@ describe("extractFinancialsFromDocument", () => {
       total_assets: 900000,
       found_in_document: true,
     });
-    expect(parseMock).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "claude-opus-5" }),
-    );
+    expect(parseMock).toHaveBeenCalledWith(expect.objectContaining({ model: "claude-opus-5" }));
   });
 
   it("throws when Claude returns no parseable output", async () => {
     parseMock.mockResolvedValueOnce({ parsed_output: null });
-    const { extractFinancialsFromDocument } = await import("@/lib/data-sources/claude-extract");
-    await expect(extractFinancialsFromDocument("teks...", "Bank Mandiri")).rejects.toThrow(
+    const { ClaudeExtractor } = await import("@/lib/data-sources/extraction/claude");
+    await expect(new ClaudeExtractor().extractFinancials("teks...", "Bank Mandiri")).rejects.toThrow(
       "did not return parseable",
     );
   });
 });
 ```
 
-- [ ] **Step 6: Run test to verify it fails**
+- [ ] **Step 7: Run test to verify it fails**
 
-Run: `npm test -- tests/lib/data-sources/claude-extract.test.ts`
-Expected: FAIL — `Cannot find module '@/lib/data-sources/claude-extract'`
+Run: `npm test -- tests/lib/data-sources/extraction/claude.test.ts`
+Expected: FAIL — `Cannot find module '@/lib/data-sources/extraction/claude'`
 
-- [ ] **Step 7: Implement the Claude extraction client**
+- [ ] **Step 8: Implement the shared extraction types and the Claude extractor**
 
 ```typescript
-// src/lib/data-sources/claude-extract.ts
-import Anthropic from "@anthropic-ai/sdk";
+// src/lib/data-sources/extraction/types.ts
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 
 export const ExtractedFinancialsSchema = z.object({
   period: z.string().describe("Reporting period, e.g. 'FY2025' or 'Q3-2026'"),
@@ -1445,36 +1461,327 @@ export const ExtractedFinancialsSchema = z.object({
 });
 export type ExtractedFinancials = z.infer<typeof ExtractedFinancialsSchema>;
 
-export async function extractFinancialsFromDocument(
-  documentText: string,
-  companyName: string,
-): Promise<ExtractedFinancials> {
-  const client = new Anthropic();
-  const response = await client.messages.parse({
-    model: "claude-opus-5",
-    max_tokens: 4096,
-    system:
-      "You extract financial figures from official Indonesian company filings. " +
-      "Only report numbers explicitly stated in the document - never estimate or infer. " +
-      "If a figure is not present, set it to null and set found_in_document accordingly.",
-    messages: [
-      { role: "user", content: `Company: ${companyName}\n\nDocument text:\n${documentText}` },
-    ],
-    output_config: { format: zodOutputFormat(ExtractedFinancialsSchema) },
-  });
-  if (!response.parsed_output) {
-    throw new Error(`Claude did not return parseable structured output for ${companyName}`);
-  }
-  return response.parsed_output;
+export interface DocumentExtractor {
+  extractFinancials(documentText: string, companyName: string): Promise<ExtractedFinancials>;
+}
+
+export const EXTRACTION_SYSTEM_PROMPT =
+  "You extract financial figures from official Indonesian company filings. " +
+  "Only report numbers explicitly stated in the document - never estimate or infer. " +
+  "If a figure is not present, set it to null and set found_in_document accordingly.";
+
+export function buildExtractionPrompt(documentText: string, companyName: string): string {
+  return `Company: ${companyName}\n\nDocument text:\n${documentText}`;
 }
 ```
 
-- [ ] **Step 8: Run test to verify it passes**
+```typescript
+// src/lib/data-sources/extraction/claude.ts
+import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import {
+  type DocumentExtractor,
+  type ExtractedFinancials,
+  ExtractedFinancialsSchema,
+  EXTRACTION_SYSTEM_PROMPT,
+  buildExtractionPrompt,
+} from "./types";
 
-Run: `npm test -- tests/lib/data-sources/claude-extract.test.ts`
+export class ClaudeExtractor implements DocumentExtractor {
+  async extractFinancials(documentText: string, companyName: string): Promise<ExtractedFinancials> {
+    const client = new Anthropic();
+    const response = await client.messages.parse({
+      model: "claude-opus-5",
+      max_tokens: 4096,
+      system: EXTRACTION_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildExtractionPrompt(documentText, companyName) }],
+      output_config: { format: zodOutputFormat(ExtractedFinancialsSchema) },
+    });
+    if (!response.parsed_output) {
+      throw new Error(`Claude did not return parseable structured output for ${companyName}`);
+    }
+    return response.parsed_output;
+  }
+}
+```
+
+- [ ] **Step 9: Run test to verify it passes**
+
+Run: `npm test -- tests/lib/data-sources/extraction/claude.test.ts`
 Expected: PASS
 
-- [ ] **Step 9: Write the failing test for the Job 3 route**
+- [ ] **Step 10: Write the failing test for the OpenAI extractor**
+
+```typescript
+// tests/lib/data-sources/extraction/openai.test.ts
+import { describe, it, expect, vi } from "vitest";
+
+const parseMock = vi.fn().mockResolvedValue({
+  output_parsed: {
+    period: "FY2025",
+    revenue: 100000,
+    net_profit: 15000,
+    total_assets: 900000,
+    found_in_document: true,
+  },
+});
+
+vi.mock("openai", () => ({
+  default: vi.fn().mockImplementation(() => ({ responses: { parse: parseMock } })),
+}));
+
+describe("OpenAiExtractor", () => {
+  it("returns the parsed structured output", async () => {
+    const { OpenAiExtractor } = await import("@/lib/data-sources/extraction/openai");
+    const result = await new OpenAiExtractor().extractFinancials("laporan tahunan teks...", "Bank Rakyat Indonesia");
+    expect(result).toEqual({
+      period: "FY2025",
+      revenue: 100000,
+      net_profit: 15000,
+      total_assets: 900000,
+      found_in_document: true,
+    });
+    expect(parseMock).toHaveBeenCalledWith(expect.objectContaining({ model: "gpt-6-astra" }));
+  });
+
+  it("throws when OpenAI returns no parsed output", async () => {
+    parseMock.mockResolvedValueOnce({ output_parsed: null });
+    const { OpenAiExtractor } = await import("@/lib/data-sources/extraction/openai");
+    await expect(new OpenAiExtractor().extractFinancials("teks...", "Bank Mandiri")).rejects.toThrow(
+      "did not return parseable",
+    );
+  });
+});
+```
+
+- [ ] **Step 11: Run test to verify it fails**
+
+Run: `npm test -- tests/lib/data-sources/extraction/openai.test.ts`
+Expected: FAIL — `Cannot find module '@/lib/data-sources/extraction/openai'`
+
+- [ ] **Step 12: Implement the OpenAI extractor**
+
+```typescript
+// src/lib/data-sources/extraction/openai.ts
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
+import {
+  type DocumentExtractor,
+  type ExtractedFinancials,
+  ExtractedFinancialsSchema,
+  EXTRACTION_SYSTEM_PROMPT,
+  buildExtractionPrompt,
+} from "./types";
+
+// Confirmed against developers.openai.com/api/docs/guides/structured-outputs
+// on 2026-09-23 (client.responses.parse + zodTextFormat, model
+// "gpt-6-astra", result on response.output_parsed) - not cross-checked
+// against a bundled SDK reference the way the Claude client was. Re-verify
+// against the live docs before relying on this in production.
+export class OpenAiExtractor implements DocumentExtractor {
+  async extractFinancials(documentText: string, companyName: string): Promise<ExtractedFinancials> {
+    const client = new OpenAI();
+    const response = await client.responses.parse({
+      model: "gpt-6-astra",
+      input: [
+        { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
+        { role: "user", content: buildExtractionPrompt(documentText, companyName) },
+      ],
+      text: { format: zodTextFormat(ExtractedFinancialsSchema, "extracted_financials") },
+    });
+    if (!response.output_parsed) {
+      throw new Error(`OpenAI did not return parseable structured output for ${companyName}`);
+    }
+    return response.output_parsed;
+  }
+}
+```
+
+- [ ] **Step 13: Run test to verify it passes**
+
+Run: `npm test -- tests/lib/data-sources/extraction/openai.test.ts`
+Expected: PASS
+
+- [ ] **Step 14: Write the failing test for the Gemini extractor**
+
+```typescript
+// tests/lib/data-sources/extraction/gemini.test.ts
+import { describe, it, expect, vi } from "vitest";
+
+const createMock = vi.fn().mockResolvedValue({
+  output_text: JSON.stringify({
+    period: "FY2025",
+    revenue: 100000,
+    net_profit: 15000,
+    total_assets: 900000,
+    found_in_document: true,
+  }),
+});
+
+vi.mock("@google/genai", () => ({
+  GoogleGenAI: vi.fn().mockImplementation(() => ({ interactions: { create: createMock } })),
+}));
+
+describe("GeminiExtractor", () => {
+  it("parses the JSON text output into the expected shape", async () => {
+    const { GeminiExtractor } = await import("@/lib/data-sources/extraction/gemini");
+    const result = await new GeminiExtractor().extractFinancials("laporan tahunan teks...", "Bank Rakyat Indonesia");
+    expect(result).toEqual({
+      period: "FY2025",
+      revenue: 100000,
+      net_profit: 15000,
+      total_assets: 900000,
+      found_in_document: true,
+    });
+    expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ model: "gemini-3.8-flash" }));
+  });
+
+  it("throws when Gemini's output does not match the schema", async () => {
+    createMock.mockResolvedValueOnce({ output_text: JSON.stringify({ unexpected: true }) });
+    const { GeminiExtractor } = await import("@/lib/data-sources/extraction/gemini");
+    await expect(new GeminiExtractor().extractFinancials("teks...", "Bank Mandiri")).rejects.toThrow(
+      "did not return parseable",
+    );
+  });
+});
+```
+
+- [ ] **Step 15: Run test to verify it fails**
+
+Run: `npm test -- tests/lib/data-sources/extraction/gemini.test.ts`
+Expected: FAIL — `Cannot find module '@/lib/data-sources/extraction/gemini'`
+
+- [ ] **Step 16: Implement the Gemini extractor**
+
+```typescript
+// src/lib/data-sources/extraction/gemini.ts
+import { GoogleGenAI } from "@google/genai";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import {
+  type DocumentExtractor,
+  type ExtractedFinancials,
+  ExtractedFinancialsSchema,
+  EXTRACTION_SYSTEM_PROMPT,
+  buildExtractionPrompt,
+} from "./types";
+
+// Confirmed against ai.google.dev/gemini-api/docs/structured-output on
+// 2026-09-23 (client.interactions.create + response_format.schema, model
+// "gemini-3.8-flash", result on interaction.output_text as a JSON string) -
+// not cross-checked against a bundled SDK reference the way the Claude
+// client was. Re-verify against the live docs before relying on this in
+// production.
+export class GeminiExtractor implements DocumentExtractor {
+  async extractFinancials(documentText: string, companyName: string): Promise<ExtractedFinancials> {
+    const client = new GoogleGenAI({});
+    const schema = zodToJsonSchema(ExtractedFinancialsSchema, "ExtractedFinancials");
+    const interaction = await client.interactions.create({
+      model: "gemini-3.8-flash",
+      input: `${EXTRACTION_SYSTEM_PROMPT}\n\n${buildExtractionPrompt(documentText, companyName)}`,
+      response_format: { type: "text", mime_type: "application/json", schema },
+    });
+    const parsed = ExtractedFinancialsSchema.safeParse(JSON.parse(interaction.output_text));
+    if (!parsed.success) {
+      throw new Error(`Gemini did not return parseable structured output for ${companyName}: ${parsed.error.message}`);
+    }
+    return parsed.data;
+  }
+}
+```
+
+- [ ] **Step 17: Run test to verify it passes**
+
+Run: `npm test -- tests/lib/data-sources/extraction/gemini.test.ts`
+Expected: PASS
+
+- [ ] **Step 18: Write the failing test for the provider factory**
+
+```typescript
+// tests/lib/data-sources/extraction/index.test.ts
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/lib/data-sources/extraction/claude", () => ({
+  ClaudeExtractor: vi.fn().mockImplementation(() => ({ tag: "claude" })),
+}));
+vi.mock("@/lib/data-sources/extraction/openai", () => ({
+  OpenAiExtractor: vi.fn().mockImplementation(() => ({ tag: "openai" })),
+}));
+vi.mock("@/lib/data-sources/extraction/gemini", () => ({
+  GeminiExtractor: vi.fn().mockImplementation(() => ({ tag: "gemini" })),
+}));
+
+describe("getDocumentExtractor", () => {
+  it("defaults to Claude when no provider is given and EXTRACTION_PROVIDER is unset", async () => {
+    delete process.env.EXTRACTION_PROVIDER;
+    const { getDocumentExtractor } = await import("@/lib/data-sources/extraction");
+    expect((getDocumentExtractor() as unknown as { tag: string }).tag).toBe("claude");
+  });
+
+  it("selects OpenAI when given explicitly", async () => {
+    const { getDocumentExtractor } = await import("@/lib/data-sources/extraction");
+    expect((getDocumentExtractor("openai") as unknown as { tag: string }).tag).toBe("openai");
+  });
+
+  it("selects Gemini when given explicitly", async () => {
+    const { getDocumentExtractor } = await import("@/lib/data-sources/extraction");
+    expect((getDocumentExtractor("gemini") as unknown as { tag: string }).tag).toBe("gemini");
+  });
+
+  it("throws on an unknown provider", async () => {
+    const { getDocumentExtractor } = await import("@/lib/data-sources/extraction");
+    expect(() => getDocumentExtractor("bedrock")).toThrow('unknown EXTRACTION_PROVIDER "bedrock"');
+  });
+});
+```
+
+- [ ] **Step 19: Run test to verify it fails**
+
+Run: `npm test -- tests/lib/data-sources/extraction/index.test.ts`
+Expected: FAIL — `Cannot find module '@/lib/data-sources/extraction'`
+
+- [ ] **Step 20: Implement the provider factory**
+
+```typescript
+// src/lib/data-sources/extraction/index.ts
+import type { DocumentExtractor } from "./types";
+import { ClaudeExtractor } from "./claude";
+import { OpenAiExtractor } from "./openai";
+import { GeminiExtractor } from "./gemini";
+
+export function getDocumentExtractor(
+  provider: string = process.env.EXTRACTION_PROVIDER ?? "claude",
+): DocumentExtractor {
+  switch (provider) {
+    case "claude":
+      return new ClaudeExtractor();
+    case "openai":
+      return new OpenAiExtractor();
+    case "gemini":
+      return new GeminiExtractor();
+    default:
+      throw new Error(`unknown EXTRACTION_PROVIDER "${provider}" - expected "claude", "openai", or "gemini"`);
+  }
+}
+
+export type { DocumentExtractor, ExtractedFinancials } from "./types";
+```
+
+- [ ] **Step 21: Run test to verify it passes**
+
+Run: `npm test -- tests/lib/data-sources/extraction/index.test.ts`
+Expected: PASS
+
+- [ ] **Step 22: Extend `.env.example` for the new providers**
+
+Add these lines to `.env.example` (alongside the existing `ANTHROPIC_API_KEY`):
+
+```bash
+EXTRACTION_PROVIDER=claude
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+```
+
+- [ ] **Step 23: Write the failing test for the Job 3 route**
 
 ```typescript
 // tests/api/cron-extract.test.ts
@@ -1489,13 +1796,15 @@ vi.mock("@/lib/data-sources/document-text", () => ({
   fetchDocumentText: vi.fn().mockResolvedValue("laporan tahunan teks..."),
 }));
 
-vi.mock("@/lib/data-sources/claude-extract", () => ({
-  extractFinancialsFromDocument: vi.fn().mockResolvedValue({
-    period: "FY2025",
-    revenue: 100000,
-    net_profit: 15000,
-    total_assets: 900000,
-    found_in_document: true,
+vi.mock("@/lib/data-sources/extraction", () => ({
+  getDocumentExtractor: () => ({
+    extractFinancials: vi.fn().mockResolvedValue({
+      period: "FY2025",
+      revenue: 100000,
+      net_profit: 15000,
+      total_assets: 900000,
+      found_in_document: true,
+    }),
   }),
 }));
 
@@ -1552,12 +1861,12 @@ describe("GET /api/cron/extract", () => {
 });
 ```
 
-- [ ] **Step 10: Run test to verify it fails**
+- [ ] **Step 24: Run test to verify it fails**
 
 Run: `npm test -- tests/api/cron-extract.test.ts`
 Expected: FAIL — `Cannot find module '@/app/api/cron/extract/route'`
 
-- [ ] **Step 11: Implement the Job 3 route**
+- [ ] **Step 25: Implement the Job 3 route**
 
 ```typescript
 // src/app/api/cron/extract/route.ts
@@ -1565,7 +1874,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertCronAuthorized } from "@/lib/cron-auth";
 import { COMPANIES } from "@/lib/companies";
 import { fetchDocumentText } from "@/lib/data-sources/document-text";
-import { extractFinancialsFromDocument } from "@/lib/data-sources/claude-extract";
+import { getDocumentExtractor } from "@/lib/data-sources/extraction";
 import { checkFinancialAnomaly, type FinancialFigures } from "@/lib/validation/financials";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
@@ -1585,6 +1894,7 @@ export async function GET(request: NextRequest) {
     .select("ticker, period, source_url")
     .not("source_url", "is", null);
 
+  const extractor = getDocumentExtractor();
   const results: { ticker: string; period: string; ok: boolean; reason?: string }[] = [];
 
   for (const doc of (pending ?? []) as PendingDocument[]) {
@@ -1603,7 +1913,7 @@ export async function GET(request: NextRequest) {
 
       const documentText = await fetchDocumentText(doc.source_url);
       const company = COMPANIES.find((c) => c.ticker === doc.ticker);
-      const extracted = await extractFinancialsFromDocument(documentText, company?.name ?? doc.ticker);
+      const extracted = await extractor.extractFinancials(documentText, company?.name ?? doc.ticker);
 
       const { data: previousApi } = await supabase
         .from("financial_reports")
@@ -1617,7 +1927,8 @@ export async function GET(request: NextRequest) {
       const anomaly = checkFinancialAnomaly(extracted, previousApi as FinancialFigures | null);
 
       // Always needs_review for the AI-extraction path, anomaly or not -
-      // human approval is the only way this reaches the dashboard (spec §4.5).
+      // human approval is the only way this reaches the dashboard (spec §4.5),
+      // regardless of which provider produced the figures.
       await supabase.from("financial_reports").insert({
         ticker: doc.ticker,
         period: doc.period,
@@ -1645,16 +1956,16 @@ export async function GET(request: NextRequest) {
 }
 ```
 
-- [ ] **Step 12: Run test to verify it passes**
+- [ ] **Step 26: Run test to verify it passes**
 
 Run: `npm test -- tests/api/cron-extract.test.ts`
 Expected: PASS
 
-- [ ] **Step 13: Commit**
+- [ ] **Step 27: Commit**
 
 ```bash
-git add src/lib/data-sources/document-text.ts src/lib/data-sources/claude-extract.ts src/app/api/cron/extract/route.ts tests/lib/data-sources/document-text.test.ts tests/lib/data-sources/claude-extract.test.ts tests/api/cron-extract.test.ts
-git commit -m "feat: add Job 3 AI-extraction cron route with mandatory review gate"
+git add src/lib/data-sources/document-text.ts src/lib/data-sources/extraction/ src/app/api/cron/extract/route.ts .env.example tests/lib/data-sources/document-text.test.ts tests/lib/data-sources/extraction/ tests/api/cron-extract.test.ts
+git commit -m "feat: add Job 3 AI-extraction cron route with configurable provider and mandatory review gate"
 ```
 
 ---
@@ -2359,8 +2670,8 @@ git commit -m "chore: configure Vercel Cron schedules for the three ingestion jo
 ## Self-Review Notes
 
 - **Spec coverage:** §1 (goals/non-goals) → Tasks 4, 10 enforce login-only/no-export. §2 (13-company list) → Task 2. §3 (architecture) → Tasks 1, 6, 7, 8, 13 (single repo, Vercel Cron, no separate service). §4.1 (frontend) → Tasks 4, 9, 10, 11. §4.2 (schema) → Task 2. §4.3 (price source, ~15min delay) → Tasks 6, 10 (`StaleIndicator` + honest delay copy). §4.4 (financial sources, verified vs needs_review) → Tasks 7, 8. §5 (error handling/data trust) → Task 5 (anomaly/sanity checks), Task 6 (no overwrite on failed fetch — insert only on success), Task 9 (`StaleIndicator`), Task 8 (mandatory `needs_review`). §6 (testing) → every task is TDD; Task 13 Step 3 covers the pre-go-live manual check called for in spec §6. §7 (deployment) → Task 13. §4.5/Tanya AI is explicitly excluded per this plan's header — separate plan.
-- **Placeholder scan:** no TBD/TODO in any code block. The two genuinely unconfirmed external API shapes (GOAPI.io, Sectors.app) are isolated to one fetch call and one parse line each, called out in prose (not left as vague code), and covered by tests against the assumed shape so a later adjustment has a regression test to update, not a blind rewrite.
-- **Type consistency:** `Company` (Task 2) is used identically in Tasks 6, 7, 8, 9, 10, 11. `FinancialFigures` (Task 5) matches the fields read/written in Tasks 7 and 8. `FinancialReportRow` (Task 11) matches the columns selected in Task 11's page query and Task 12's reviewer query. `assertCronAuthorized` (Task 6) is imported unchanged by Tasks 7 and 8 — no renamed variant introduced later.
+- **Placeholder scan:** no TBD/TODO in any code block. The genuinely unconfirmed external API shapes — GOAPI.io, Sectors.app (sign-up-gated docs), and the OpenAI/Gemini extractors added after the 2026-09-23 multi-provider revision (confirmed against live docs but not a bundled SDK reference like Claude's) — are each isolated to one fetch/parse call, called out in prose, and covered by tests against the assumed shape so a later adjustment has a regression test to update, not a blind rewrite.
+- **Type consistency:** `Company` (Task 2) is used identically in Tasks 6, 7, 8, 9, 10, 11. `FinancialFigures` (Task 5) matches the fields read/written in Tasks 7 and 8. `FinancialReportRow` (Task 11) matches the columns selected in Task 11's page query and Task 12's reviewer query. `assertCronAuthorized` (Task 6) is imported unchanged by Tasks 7 and 8. `ExtractedFinancials` and the `DocumentExtractor` interface (Task 8's `types.ts`) are implemented identically by `ClaudeExtractor`, `OpenAiExtractor`, and `GeminiExtractor`, and consumed only through `getDocumentExtractor()` in the Job 3 route — no direct import of a concrete extractor outside `extraction/index.ts`, so swapping `EXTRACTION_PROVIDER` requires no route changes.
 
 ## Execution Handoff
 
