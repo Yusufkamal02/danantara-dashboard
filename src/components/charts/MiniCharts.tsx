@@ -55,18 +55,18 @@ function Bubble({
     >
       <div
         className="mono"
-        style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 3 }}
+        style={{ fontSize: "calc(9px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 3 }}
       >
         {title}
       </div>
       {rows.map((r) => (
         <div key={r.label} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-          <span className="mono dim" style={{ fontSize: 9.5 }}>
+          <span className="mono dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))" }}>
             {r.label}
           </span>
           <span
             className="mono"
-            style={{ fontSize: 10.5, fontWeight: 600, flexGrow: 1, textAlign: "right", color: r.color }}
+            style={{ fontSize: "calc(10.5px * var(--fs-scale))", fontWeight: 600, flexGrow: 1, textAlign: "right", color: r.color }}
           >
             {r.value}
           </span>
@@ -168,6 +168,7 @@ export function RatioTrend({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
+        className="chart-wide"
         width="100%"
         height="100%"
         preserveAspectRatio="none"
@@ -217,11 +218,13 @@ export function RatioTrend({
           </g>
         ))}
 
-        {quarters.map((q, i) => (
-          <text key={q} x={x(i)} y={H - 4} textAnchor="middle" className="mono" fontSize={9} fill="var(--text-secondary)">
-            {q}
-          </text>
-        ))}
+        <g className="x-ticks">
+          {quarters.map((q, i) => (
+            <text key={q} x={x(i)} y={H - 4} textAnchor="middle" className="mono" fontSize={9} fill="var(--text-secondary)">
+              {q}
+            </text>
+          ))}
+        </g>
       </svg>
 
       {hoverIndex !== null && (
@@ -293,10 +296,10 @@ export function Donut({
         {slices.map((s) => (
           <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 9, height: 9, background: s.color, flexShrink: 0 }} />
-            <span className="mono" style={{ flexGrow: 1, fontSize: 11, fontWeight: 600 }}>
+            <span className="mono" style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600 }}>
               {s.name}
             </span>
-            <span className="mono dim" style={{ fontSize: 11 }}>
+            <span className="mono dim" style={{ fontSize: "calc(11px * var(--fs-scale))" }}>
               {s.pct}%
             </span>
           </div>

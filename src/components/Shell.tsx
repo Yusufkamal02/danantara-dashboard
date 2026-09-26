@@ -30,7 +30,7 @@ function AppBar({ subtitle }: { subtitle: string }) {
             strokeWidth="1.1"
           />
         </svg>
-        <span className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: "0.14em" }}>
+        <span className="mono" style={{ fontSize: "calc(15px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.14em" }}>
           DANANTARA
         </span>
       </span>
@@ -42,13 +42,13 @@ function AppBar({ subtitle }: { subtitle: string }) {
       <span className="appbar-tape">
         {TICKER_TAPE.map((q) => (
           <span key={q.ticker} style={{ display: "flex", gap: 6, alignItems: "baseline", flexShrink: 0 }}>
-            <span className="mono dim" style={{ fontSize: 11, fontWeight: 700 }}>
+            <span className="mono dim" style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 700 }}>
               {q.ticker === "IHSG" ? <Term k="IHSG" label="IHSG" /> : q.ticker}
             </span>
-            <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>
+            <span className="mono" style={{ fontSize: "calc(13px * var(--fs-scale))", fontWeight: 600 }}>
               {fmt(q.price)}
             </span>
-            <span className={`mono ${q.changePct >= 0 ? "pos" : "neg"}`} style={{ fontSize: 11, fontWeight: 600 }}>
+            <span className={`mono ${q.changePct >= 0 ? "pos" : "neg"}`} style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600 }}>
               {q.changePct >= 0 ? "+" : ""}
               {q.changePct.toFixed(2).replace(".", ",")}%
             </span>
@@ -60,7 +60,7 @@ function AppBar({ subtitle }: { subtitle: string }) {
         className="mono"
         style={{
           flexShrink: 0,
-          fontSize: 9,
+          fontSize: "calc(9px * var(--fs-scale))",
           fontWeight: 700,
           letterSpacing: "0.08em",
           color: "var(--text-on-accent)",
@@ -79,14 +79,14 @@ function CommandBand({ command, meta }: { command: string; meta: string }) {
     <div className="cmdband">
       <span
         className="mono truncate"
-        style={{ fontSize: 11, fontWeight: 600, color: "var(--accent-amber)" }}
+        style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600, color: "var(--accent-amber)" }}
       >
         {command}
       </span>
       <span style={{ flexGrow: 1 }} />
       <span
         className="mono cmdband-meta"
-        style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "#ffd9d9", whiteSpace: "nowrap" }}
+        style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em", color: "#ffd9d9", whiteSpace: "nowrap" }}
       >
         {meta}
       </span>
@@ -119,7 +119,7 @@ function TabStrip({ sync }: { sync: string }) {
       <span style={{ flexGrow: 1 }} />
       <span
         className="mono dim tabstrip-sync"
-        style={{ display: "flex", alignItems: "center", padding: "0 12px", fontSize: 10, whiteSpace: "nowrap" }}
+        style={{ display: "flex", alignItems: "center", padding: "0 12px", fontSize: "calc(10px * var(--fs-scale))", whiteSpace: "nowrap" }}
       >
         {sync}
       </span>

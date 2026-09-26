@@ -50,7 +50,7 @@ export default function ChatPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {CHAT_HISTORY.map((g) => (
                 <div key={g.group}>
-                  <span className="mono dim" style={{ display: "block", marginTop: 8, fontSize: 9, fontWeight: 600, letterSpacing: "0.08em" }}>
+                  <span className="mono dim" style={{ display: "block", marginTop: 8, fontSize: "calc(9px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em" }}>
                     {g.group.toUpperCase()}
                   </span>
                   {g.items.map((item, i) => (
@@ -69,7 +69,7 @@ export default function ChatPage() {
                         borderTop: 0,
                         borderRight: 0,
                         borderBottom: 0,
-                        fontSize: 11,
+                        fontSize: "calc(11px * var(--fs-scale))",
                         color: g.group === "Hari ini" && i === 0 ? "var(--text-primary)" : "var(--text-secondary)",
                         cursor: "pointer",
                       }}
@@ -105,8 +105,8 @@ export default function ChatPage() {
                     style={{ marginTop: 2, width: 12, height: 12, accentColor: "var(--accent-amber)" }}
                   />
                   <span style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 11 }}>{s.label}</span>
-                    <span className="mono dim" style={{ fontSize: 9 }}>
+                    <span style={{ fontSize: "calc(11px * var(--fs-scale))" }}>{s.label}</span>
+                    <span className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))" }}>
                       {s.meta}
                     </span>
                   </span>
@@ -116,7 +116,7 @@ export default function ChatPage() {
           </Panel>
 
           <Panel title="Batasan Akses" chip={<Term k="RBAC" label="PERAN: ANALIS" />} className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
-            <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.5 }}>
+            <p className="dim" style={{ margin: 0, fontSize: "calc(11px * var(--fs-scale))", lineHeight: 1.5 }}>
               Anda dapat membaca seluruh data pasar dan laporan publik. Notulen rapat internal dan proyeksi anggaran memerlukan persetujuan Direktur Investasi.
             </p>
           </Panel>
@@ -149,8 +149,8 @@ export default function ChatPage() {
                       borderRight: "2px solid var(--accent-amber)",
                     }}
                   >
-                    <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5 }}>{t.question}</p>
-                    <span className="mono dim" style={{ display: "block", marginTop: 5, fontSize: 9, textAlign: "right" }}>
+                    <p style={{ margin: 0, fontSize: "calc(12.5px * var(--fs-scale))", lineHeight: 1.5 }}>{t.question}</p>
+                    <span className="mono dim" style={{ display: "block", marginTop: 5, fontSize: "calc(9px * var(--fs-scale))", textAlign: "right" }}>
                       Analis Portofolio
                     </span>
                   </div>
@@ -181,7 +181,7 @@ export default function ChatPage() {
                   style={{
                     textAlign: "left",
                     padding: "5px 8px",
-                    fontSize: 10.5,
+                    fontSize: "calc(10.5px * var(--fs-scale))",
                     color: "var(--text-secondary)",
                     background: "transparent",
                     border: "1px solid var(--border-hairline)",
@@ -223,7 +223,7 @@ export default function ChatPage() {
                   border: "1px solid var(--border-hairline)",
                   outline: "none",
                   fontFamily: "var(--font-sans)",
-                  fontSize: 12,
+                  fontSize: "calc(12px * var(--fs-scale))",
                   lineHeight: 1.45,
                   color: "var(--text-primary)",
                 }}
@@ -234,7 +234,7 @@ export default function ChatPage() {
                 style={{
                   height: 44,
                   padding: "0 18px",
-                  fontSize: 11,
+                  fontSize: "calc(11px * var(--fs-scale))",
                   fontWeight: 700,
                   letterSpacing: "0.08em",
                   color: "var(--text-on-accent)",
@@ -258,18 +258,18 @@ export default function ChatPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span
                       className="mono"
-                      style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.06em", color: "var(--text-on-accent)", background: "var(--text-secondary)", padding: "1px 4px" }}
+                      style={{ fontSize: "calc(8px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.06em", color: "var(--text-on-accent)", background: "var(--text-secondary)", padding: "1px 4px" }}
                     >
                       {d.tag}
                     </span>
-                    <span className="truncate" style={{ flexGrow: 1, fontSize: 11, fontWeight: 600, width: "100%" }}>
+                    <span className="truncate" style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600, width: "100%" }}>
                       {d.title}
                     </span>
-                    <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: d.score > 0.85 ? "var(--status-positive)" : "var(--accent-amber)" }}>
+                    <span className="mono" style={{ fontSize: "calc(9.5px * var(--fs-scale))", fontWeight: 600, color: d.score > 0.85 ? "var(--status-positive)" : "var(--accent-amber)" }}>
                       {d.score.toFixed(2).replace(".", ",")}
                     </span>
                   </div>
-                  <span className="truncate dim" style={{ fontSize: 10.5, width: "100%" }}>
+                  <span className="truncate dim" style={{ fontSize: "calc(10.5px * var(--fs-scale))", width: "100%" }}>
                     {d.snippet}
                   </span>
                 </div>
@@ -285,7 +285,7 @@ export default function ChatPage() {
                 padding: "9px 10px",
                 background: "var(--bg-input)",
                 border: "1px solid var(--border-hairline)",
-                fontSize: 10,
+                fontSize: "calc(10px * var(--fs-scale))",
                 lineHeight: 1.55,
                 color: "var(--status-positive)",
                 whiteSpace: "pre-wrap",
@@ -304,8 +304,8 @@ export default function ChatPage() {
                     {i < LINEAGE.length - 1 && <span style={{ flexGrow: 1, width: 1, background: "var(--border-hairline)" }} />}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 1, paddingBottom: i < LINEAGE.length - 1 ? 10 : 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600 }}>{l.step}</span>
-                    <span className="mono dim" style={{ fontSize: 9.5 }}>
+                    <span style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600 }}>{l.step}</span>
+                    <span className="mono dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))" }}>
                       {l.detail}
                     </span>
                   </div>
@@ -318,13 +318,13 @@ export default function ChatPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {TOKEN_USAGE.map((t) => (
                 <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className="dim" style={{ width: 84, flexShrink: 0, fontSize: 10.5 }}>
+                  <span className="dim" style={{ width: 84, flexShrink: 0, fontSize: "calc(10.5px * var(--fs-scale))" }}>
                     {t.label}
                   </span>
                   <div style={{ flexGrow: 1, height: 7, background: "var(--bg-panel-header)" }}>
                     <div style={{ width: `${t.pct}%`, height: 7, background: "var(--accent-blue)" }} />
                   </div>
-                  <span className="mono" style={{ width: 52, textAlign: "right", fontSize: 10 }}>
+                  <span className="mono" style={{ width: 52, textAlign: "right", fontSize: "calc(10px * var(--fs-scale))" }}>
                     {t.value}
                   </span>
                 </div>
@@ -346,10 +346,10 @@ function AnswerBubble({ answer }: { answer: ChatAnswer }) {
             <path d="M8 1.5 14 5v6l-6 3.5L2 11V5z" fill="none" stroke="var(--text-on-accent)" strokeWidth="1.3" />
           </svg>
         </span>
-        <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)" }}>
+        <span className="mono" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)" }}>
           DANANTARA AI
         </span>
-        <span className="mono dim" style={{ fontSize: 9 }}>
+        <span className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))" }}>
           dijawab dalam {answer.seconds} dtk · terskrip
         </span>
       </div>
@@ -372,7 +372,7 @@ function AnswerBubble({ answer }: { answer: ChatAnswer }) {
         {answer.citations.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5, paddingTop: 9, borderTop: "1px solid var(--border-hairline)" }}>
             {answer.citations.map((c, i) => (
-              <span key={c} className="mono dim" style={{ fontSize: 9, border: "1px solid var(--border-hairline)", padding: "2px 6px" }}>
+              <span key={c} className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))", border: "1px solid var(--border-hairline)", padding: "2px 6px" }}>
                 {i + 1}. {c}
               </span>
             ))}
@@ -386,11 +386,11 @@ function AnswerBubble({ answer }: { answer: ChatAnswer }) {
 function Block({ block }: { block: AnswerBlock }) {
   switch (block.type) {
     case "text":
-      return <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.55 }}>{block.text}</p>;
+      return <p style={{ margin: 0, fontSize: "calc(12.5px * var(--fs-scale))", lineHeight: 1.55 }}>{block.text}</p>;
 
     case "note":
       return (
-        <p className="dim" style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5 }}>
+        <p className="dim" style={{ margin: 0, fontSize: "calc(11.5px * var(--fs-scale))", lineHeight: 1.5 }}>
           {block.text}
         </p>
       );
@@ -415,7 +415,7 @@ function Block({ block }: { block: AnswerBlock }) {
                     <td
                       key={i}
                       className={i === 0 ? "left" : r.tone === "neg" ? "neg" : undefined}
-                      style={{ fontFamily: i === 0 ? "var(--font-sans)" : undefined, fontSize: 11, fontWeight: i === 0 ? 400 : 600 }}
+                      style={{ fontFamily: i === 0 ? "var(--font-sans)" : undefined, fontSize: "calc(11px * var(--fs-scale))", fontWeight: i === 0 ? 400 : 600 }}
                     >
                       {c}
                     </td>
@@ -444,13 +444,13 @@ function Block({ block }: { block: AnswerBlock }) {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <span className="dim" style={{ fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <span className="dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               {block.label}
             </span>
-            <span className="mono" style={{ fontSize: 19, fontWeight: 600 }}>
+            <span className="mono" style={{ fontSize: "calc(19px * var(--fs-scale))", fontWeight: 600 }}>
               {block.value}{" "}
               {block.delta && (
-                <span className="pos" style={{ fontSize: 12 }}>
+                <span className="pos" style={{ fontSize: "calc(12px * var(--fs-scale))" }}>
                   {block.delta}
                 </span>
               )}
@@ -460,10 +460,10 @@ function Block({ block }: { block: AnswerBlock }) {
             <>
               <span style={{ width: 1, height: 34, background: "var(--border-hairline)" }} />
               <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 1 }}>
-                <span className="dim" style={{ fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                <span className="dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                   {block.intervalLabel}
                 </span>
-                <span className="mono" style={{ fontSize: 13 }}>
+                <span className="mono" style={{ fontSize: "calc(13px * var(--fs-scale))" }}>
                   {block.interval}
                 </span>
               </div>
@@ -473,7 +473,7 @@ function Block({ block }: { block: AnswerBlock }) {
             <Link
               href={block.href}
               className="mono"
-              style={{ padding: "7px 11px", fontSize: 10, fontWeight: 600, textDecoration: "none", color: "var(--text-on-accent)", background: "var(--accent-amber)" }}
+              style={{ padding: "7px 11px", fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, textDecoration: "none", color: "var(--text-on-accent)", background: "var(--accent-amber)" }}
             >
               {block.cta}
             </Link>

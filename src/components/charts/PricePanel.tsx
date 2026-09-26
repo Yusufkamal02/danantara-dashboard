@@ -63,6 +63,7 @@ export function PricePanel() {
     <Panel
       // Without flex-grow the panel shrinks to the SVG's intrinsic width (the
       // 856px viewBox) and leaves a gap once the column is wider than that.
+      className="panel-chart"
       style={{ flexGrow: 1, minWidth: 0 }}
       title="BBRI IJ EQUITY — Bank Rakyat Indonesia · Harian"
       extra={
@@ -77,7 +78,7 @@ export function PricePanel() {
                 className="mono tap"
                 style={{
                   padding: "1px 6px",
-                  fontSize: 9.5,
+                  fontSize: "calc(9.5px * var(--fs-scale))",
                   fontWeight: 600,
                   cursor: "pointer",
                   border: "1px solid var(--border-hairline)",
@@ -89,7 +90,7 @@ export function PricePanel() {
               </button>
             ))}
           </span>
-          <span className="mono pos" style={{ fontSize: 10, fontWeight: 700 }}>
+          <span className="mono pos" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700 }}>
             {id(last.close)} +60 (+1,26%)
           </span>
         </span>
@@ -99,6 +100,7 @@ export function PricePanel() {
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
+        className="chart-wide"
         width="100%"
         height="100%"
         preserveAspectRatio="none"
@@ -164,7 +166,7 @@ export function PricePanel() {
         <text
           x={PLOT_W + 6}
           y={py(last.close) + 3.4}
-          className="mono"
+          className="mono fixed-label"
           fontSize={9.5}
           fontWeight={700}
           fill="var(--text-on-accent)"
@@ -173,7 +175,7 @@ export function PricePanel() {
         </text>
 
         {/* volume */}
-        <text x={4} y={VOL_TOP + 9} className="mono" fontSize={9} fontWeight={600} fill="var(--text-secondary)">
+        <text x={4} y={VOL_TOP + 9} className="mono" fontSize={9} fontWeight={600} fill="var(--text-secondary)" stroke="var(--bg-surface)" strokeWidth={3} paintOrder="stroke">
           VOLUME (lot)
         </text>
         {candles.map((c, i) => {
@@ -216,7 +218,7 @@ export function PricePanel() {
             .map((c, i) => `${cx(i).toFixed(1)},${(RSI_BOT - (c.rsi / 100) * (RSI_BOT - RSI_TOP)).toFixed(1)}`)
             .join(" ")}
         />
-        <text x={4} y={RSI_TOP + 9} className="mono" fontSize={9} fontWeight={600} fill="var(--text-secondary)">
+        <text x={4} y={RSI_TOP + 9} className="mono" fontSize={9} fontWeight={600} fill="var(--text-secondary)" stroke="var(--bg-surface)" strokeWidth={3} paintOrder="stroke">
           RSI (14) — {(active ?? last).rsi.toFixed(1).replace(".", ",")}
         </text>
 
@@ -236,18 +238,20 @@ export function PricePanel() {
           );
         })}
         <line x1={0} y1={macdMid} x2={PLOT_W} y2={macdMid} stroke="var(--border-hairline)" strokeWidth={0.6} />
-        <text x={4} y={MACD_TOP + 8} className="mono" fontSize={9} fontWeight={600} fill="var(--text-secondary)">
+        <text x={4} y={MACD_TOP + 8} className="mono" fontSize={9} fontWeight={600} fill="var(--text-secondary)" stroke="var(--bg-surface)" strokeWidth={3} paintOrder="stroke">
           MACD (12,26,9)
         </text>
 
         {/* month ticks */}
-        {candles.map((c, i) =>
-          i % Math.ceil(candles.length / 12) === 0 ? (
-            <text key={i} x={cx(i)} y={220} className="mono" fontSize={9} fill="var(--text-secondary)">
-              {c.label}
-            </text>
-          ) : null,
-        )}
+        <g className="x-ticks">
+          {candles.map((c, i) =>
+            i % Math.ceil(candles.length / 12) === 0 ? (
+              <text key={i} x={cx(i)} y={220} className="mono" fontSize={9} fill="var(--text-secondary)">
+                {c.label}
+              </text>
+            ) : null,
+          )}
+        </g>
 
         {/* crosshair */}
         {hover !== null && (
@@ -295,16 +299,16 @@ function Readout({ candle, left }: { candle: Candle; left: number }) {
     >
       <div
         className="mono"
-        style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 4 }}
+        style={{ fontSize: "calc(9px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 4 }}
       >
         BBRI · {candle.label}
       </div>
       {rows.map(([k, v, tone]) => (
         <div key={k} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-          <span className="mono dim" style={{ fontSize: 9.5, width: 30 }}>
+          <span className="mono dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", width: 30 }}>
             {k}
           </span>
-          <span className={`mono ${tone ?? ""}`} style={{ fontSize: 10.5, fontWeight: 600, flexGrow: 1, textAlign: "right" }}>
+          <span className={`mono ${tone ?? ""}`} style={{ fontSize: "calc(10.5px * var(--fs-scale))", fontWeight: 600, flexGrow: 1, textAlign: "right" }}>
             {v}
           </span>
         </div>
@@ -316,7 +320,7 @@ function Readout({ candle, left }: { candle: Candle; left: number }) {
 /** Legend shown under the chart panel, with glossary terms. */
 export function ChartLegend() {
   return (
-    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 10 }} className="dim">
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "calc(10px * var(--fs-scale))" }} className="dim">
       <span>
         <Term k="Volume" /> · <Term k="RSI" /> · <Term k="MACD" />
       </span>

@@ -56,7 +56,7 @@ export function Term({
             style={{
               display: "block",
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: "calc(10px * var(--fs-scale))",
               fontWeight: 700,
               letterSpacing: "0.06em",
               color: "var(--accent-amber)",
@@ -70,7 +70,7 @@ export function Term({
               display: "block",
               marginTop: 4,
               fontFamily: "var(--font-sans)",
-              fontSize: 11.5,
+              fontSize: "calc(11.5px * var(--fs-scale))",
               lineHeight: 1.45,
               color: "var(--text-primary)",
             }}
@@ -82,7 +82,7 @@ export function Term({
               display: "block",
               marginTop: 6,
               fontFamily: "var(--font-mono)",
-              fontSize: 9,
+              fontSize: "calc(9px * var(--fs-scale))",
               color: "var(--text-secondary)",
             }}
           >

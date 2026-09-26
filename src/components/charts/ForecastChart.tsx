@@ -60,6 +60,7 @@ export function ForecastChart() {
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
+        className="chart-wide"
         width="100%"
         height="100%"
         preserveAspectRatio="none"
@@ -97,18 +98,31 @@ export function ForecastChart() {
 
         <circle cx={x(points.length - 1)} cy={y(target)} r={3.2} fill="var(--accent-amber)" />
         <rect x={x(points.length - 1) - 34} y={y(target) - 26} width={72} height={17} fill="var(--accent-amber)" />
-        <text x={x(points.length - 1) + 2} y={y(target) - 14} textAnchor="middle" className="mono" fontSize={10} fontWeight={700} fill="var(--text-on-accent)">
+        <text x={x(points.length - 1) + 2} y={y(target) - 14} textAnchor="middle" className="mono fixed-label" fontSize={10} fontWeight={700} fill="var(--text-on-accent)">
           {id(target)}
         </text>
 
-        {axisLabels.map((label) => {
-          const i = points.findIndex((p) => p.label === label);
-          return (
-            <text key={label} x={x(i)} y={H - 18} textAnchor="middle" className="mono" fontSize={9} fill="var(--text-secondary)">
-              {label}
-            </text>
-          );
-        })}
+        <g className="x-ticks">
+          {axisLabels.map((label, k) => {
+            const i = points.findIndex((p) => p.label === label);
+            // The outermost labels anchor inwards so they are not clipped by
+            // the plot edges.
+            const anchor = k === 0 ? "start" : k === axisLabels.length - 1 ? "end" : "middle";
+            return (
+              <text
+                key={label}
+                x={x(i)}
+                y={H - 18}
+                textAnchor={anchor}
+                className="mono"
+                fontSize={9}
+                fill="var(--text-secondary)"
+              >
+                {label}
+              </text>
+            );
+          })}
+        </g>
 
         {[
           { name: "Realisasi", color: "var(--text-primary)" },
@@ -153,7 +167,7 @@ export function ForecastChart() {
             zIndex: 5,
           }}
         >
-          <div className="mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 4 }}>
+          <div className="mono" style={{ fontSize: "calc(9px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 4 }}>
             {active.label} · {active.actual !== undefined ? "REALISASI" : "PROYEKSI"}
           </div>
           {active.actual !== undefined ? (
@@ -174,10 +188,10 @@ export function ForecastChart() {
 function Row({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-      <span className="mono dim" style={{ fontSize: 9.5 }}>
+      <span className="mono dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))" }}>
         {label}
       </span>
-      <span className="mono" style={{ fontSize: 10.5, fontWeight: 600, flexGrow: 1, textAlign: "right", color }}>
+      <span className="mono" style={{ fontSize: "calc(10.5px * var(--fs-scale))", fontWeight: 600, flexGrow: 1, textAlign: "right", color }}>
         {value}
       </span>
     </div>

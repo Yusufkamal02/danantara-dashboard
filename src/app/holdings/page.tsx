@@ -132,11 +132,11 @@ export default function HoldingsPage() {
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Cari kode atau nama emiten…"
                   className="mono"
-                  style={{ flexGrow: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 10.5, color: "var(--text-primary)" }}
+                  style={{ flexGrow: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: "calc(10.5px * var(--fs-scale))", color: "var(--text-primary)" }}
                 />
               </label>
 
-              <span className="mono dim" style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.08em" }}>
+              <span className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em" }}>
                 SEKTOR
               </span>
               {SECTORS.map((s) => (
@@ -147,18 +147,18 @@ export default function HoldingsPage() {
                     onChange={() => toggleSector(s)}
                     style={{ width: 11, height: 11, accentColor: "var(--accent-amber)" }}
                   />
-                  <span style={{ flexGrow: 1, fontSize: 11, color: active.has(s) ? "var(--text-primary)" : "var(--text-secondary)" }}>{s}</span>
-                  <span className="mono dim" style={{ fontSize: 10 }}>
+                  <span style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))", color: active.has(s) ? "var(--text-primary)" : "var(--text-secondary)" }}>{s}</span>
+                  <span className="mono dim" style={{ fontSize: "calc(10px * var(--fs-scale))" }}>
                     {SECTOR_COUNTS[s]}
                   </span>
                 </label>
               ))}
 
-              <span className="mono dim" style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.08em" }}>
+              <span className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em" }}>
                 KEPEMILIKAN MINIMUM
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="mono" style={{ fontSize: 11, fontWeight: 600, width: 44 }}>
+                <span className="mono" style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600, width: 44 }}>
                   ≥ {minOwned}%
                 </span>
                 <input
@@ -190,7 +190,7 @@ export default function HoldingsPage() {
                     borderTop: 0,
                     borderRight: 0,
                     borderBottom: "1px solid var(--border-row)",
-                    fontSize: 11,
+                    fontSize: "calc(11px * var(--fs-scale))",
                     color: savedView === v ? "var(--text-primary)" : "var(--text-secondary)",
                     cursor: "pointer",
                   }}
@@ -264,13 +264,13 @@ export default function HoldingsPage() {
                       outline: selected === h.ticker ? "1px solid var(--accent-amber)" : undefined,
                     }}
                   >
-                    <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: 11 }}>
+                    <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: "calc(11px * var(--fs-scale))" }}>
                       {h.ticker}
                     </td>
-                    <td className="left truncate" style={{ fontFamily: "var(--font-sans)", fontSize: 11, width: "100%" }}>
+                    <td className="left truncate" style={{ fontFamily: "var(--font-sans)", fontSize: "calc(11px * var(--fs-scale))", width: "100%" }}>
                       {h.name}
                     </td>
-                    <td className="left dim" style={{ fontFamily: "var(--font-sans)", fontSize: 10.5 }}>
+                    <td className="left dim" style={{ fontFamily: "var(--font-sans)", fontSize: "calc(10.5px * var(--fs-scale))" }}>
                       {h.sector}
                     </td>
                     <td style={{ fontWeight: 600 }}>{num(h.owned)}%</td>
@@ -287,7 +287,7 @@ export default function HoldingsPage() {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={COLUMNS.length} className="left dim" style={{ padding: 20, fontFamily: "var(--font-sans)", fontSize: 12 }}>
+                    <td colSpan={COLUMNS.length} className="left dim" style={{ padding: 20, fontFamily: "var(--font-sans)", fontSize: "calc(12px * var(--fs-scale))" }}>
                       Tidak ada emiten yang cocok dengan filter ini. Longgarkan kepemilikan minimum atau aktifkan sektor lain.
                     </td>
                   </tr>
@@ -308,7 +308,7 @@ export default function HoldingsPage() {
                 padding: 6,
                 background: "var(--bg-panel-header)",
                 borderTop: "1px solid var(--border-hairline)",
-                fontSize: 10.5,
+                fontSize: "calc(10.5px * var(--fs-scale))",
               }}
             >
               <span style={{ fontWeight: 700, color: "var(--accent-amber)" }}>TOTAL</span>
@@ -340,12 +340,12 @@ export default function HoldingsPage() {
           <Panel title={`Detail Posisi — ${detail.ticker}`} chip="DIPILIH" style={{ height: 306 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{detail.name}</div>
+                <div style={{ fontSize: "calc(13px * var(--fs-scale))", fontWeight: 600 }}>{detail.name}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span className="mono" style={{ fontSize: 26, fontWeight: 600 }}>
+                  <span className="mono" style={{ fontSize: "calc(26px * var(--fs-scale))", fontWeight: 600 }}>
                     {num(detail.owned)}%
                   </span>
-                  <span className="dim" style={{ fontSize: 11 }}>
+                  <span className="dim" style={{ fontSize: "calc(11px * var(--fs-scale))" }}>
                     saham dimiliki
                   </span>
                 </div>
@@ -365,12 +365,12 @@ export default function HoldingsPage() {
                   ["PER", detail.per === null ? "— tidak bermakna" : `${num(detail.per)}x`],
                 ].map(([k, v]) => (
                   <div key={k} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <span className="dim" style={{ fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    <span className="dim" style={{ fontSize: "calc(9px * var(--fs-scale))", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                       {k}
                     </span>
                     <span
                       className={`mono ${String(v).startsWith("+") ? "pos" : String(v).startsWith("-") ? "neg" : ""}`}
-                      style={{ fontSize: 12, fontWeight: 600 }}
+                      style={{ fontSize: "calc(12px * var(--fs-scale))", fontWeight: 600 }}
                     >
                       {v}
                     </span>
@@ -384,7 +384,7 @@ export default function HoldingsPage() {
                 style={{
                   alignSelf: "flex-start",
                   padding: "6px 10px",
-                  fontSize: 10,
+                  fontSize: "calc(10px * var(--fs-scale))",
                   fontWeight: 600,
                   letterSpacing: "0.04em",
                   textDecoration: "none",
@@ -403,8 +403,8 @@ export default function HoldingsPage() {
                 <BarRow key={c.ticker} label={<span className="mono">{c.ticker}</span>} value={`${num(c.pct)}%`} fraction={c.pct / CONCENTRATION[0].pct} color={c.color} />
               ))}
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 9px", background: "var(--bg-row-alt)" }}>
-                <span style={{ flexGrow: 1, fontSize: 10.5 }}>5 posisi teratas menguasai {num(CONCENTRATION_TOP5)}% NAV</span>
-                <span className="mono" style={{ fontSize: 10.5, fontWeight: 600, color: "var(--accent-amber)" }}>
+                <span style={{ flexGrow: 1, fontSize: "calc(10.5px * var(--fs-scale))" }}>5 posisi teratas menguasai {num(CONCENTRATION_TOP5)}% NAV</span>
+                <span className="mono" style={{ fontSize: "calc(10.5px * var(--fs-scale))", fontWeight: 600, color: "var(--accent-amber)" }}>
                   <Term k="HHI" label={`HHI ${HHI.toString().replace(".", ",")}`} />
                 </span>
               </div>

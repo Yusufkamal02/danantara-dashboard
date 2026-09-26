@@ -69,7 +69,7 @@ export default function PrediksiPage() {
                       onChange={() => setModel(m.name)}
                       style={{ width: 12, height: 12, accentColor: "var(--accent-amber)" }}
                     />
-                    <span style={{ flexGrow: 1, fontSize: 11, color: on ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                    <span style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))", color: on ? "var(--text-primary)" : "var(--text-secondary)" }}>
                       {m.name.includes("LSTM") ? (
                         <>
                           Ensemble <Term k="LSTM" /> + <Term k="XGBoost" />
@@ -78,7 +78,7 @@ export default function PrediksiPage() {
                         m.name
                       )}
                     </span>
-                    <span className="mono" style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: on ? "var(--status-positive)" : "var(--text-secondary)" }}>
+                    <span className="mono" style={{ fontSize: "calc(8.5px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: on ? "var(--status-positive)" : "var(--text-secondary)" }}>
                       {on ? "aktif" : "siap"}
                     </span>
                   </label>
@@ -100,7 +100,7 @@ export default function PrediksiPage() {
                     style={{
                       flexGrow: 1,
                       height: 26,
-                      fontSize: 11,
+                      fontSize: "calc(11px * var(--fs-scale))",
                       fontWeight: 600,
                       cursor: "pointer",
                       border: "1px solid var(--border-hairline)",
@@ -116,10 +116,10 @@ export default function PrediksiPage() {
               {ASSUMPTIONS.map((a) => (
                 <div key={a.id} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <div style={{ display: "flex", alignItems: "baseline" }}>
-                    <label htmlFor={a.id} className="dim" style={{ flexGrow: 1, fontSize: 10.5 }}>
+                    <label htmlFor={a.id} className="dim" style={{ flexGrow: 1, fontSize: "calc(10.5px * var(--fs-scale))" }}>
                       {a.label}
                     </label>
-                    <span className="mono" style={{ fontSize: 10.5, fontWeight: 600 }}>
+                    <span className="mono" style={{ fontSize: "calc(10.5px * var(--fs-scale))", fontWeight: 600 }}>
                       {a.value}
                     </span>
                   </div>
@@ -141,10 +141,10 @@ export default function PrediksiPage() {
             <div style={{ display: "flex", flexDirection: "column" }}>
               {MODEL_QUALITY.map((q) => (
                 <div key={q.label} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "5px 0", borderBottom: "1px solid var(--border-row)" }}>
-                  <span className="dim" style={{ flexGrow: 1, fontSize: 11 }}>
+                  <span className="dim" style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))" }}>
                     {q.term ? <Term k={q.term} label={q.label} /> : q.label}
                   </span>
-                  <span className={`mono ${q.good === true ? "pos" : q.good === null ? "dim" : "neg"}`} style={{ fontSize: 12, fontWeight: 600 }}>
+                  <span className={`mono ${q.good === true ? "pos" : q.good === null ? "dim" : "neg"}`} style={{ fontSize: "calc(12px * var(--fs-scale))", fontWeight: 600 }}>
                     {q.value}
                   </span>
                 </div>
@@ -153,7 +153,7 @@ export default function PrediksiPage() {
           </Panel>
 
           <Panel title="Catatan Metodologi" chip="PENTING" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
-            <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.5 }}>
+            <p className="dim" style={{ margin: 0, fontSize: "calc(11px * var(--fs-scale))", lineHeight: 1.5 }}>
               {METHODOLOGY_NOTE}
             </p>
           </Panel>
@@ -165,10 +165,11 @@ export default function PrediksiPage() {
             title="Proyeksi Harga BBRI — 14 Bulan ke Depan"
             chip={<Term k="Ensemble" label="ENSEMBLE LSTM + XGBOOST" />}
             extra={
-              <span className="mono" style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-amber)" }}>
+              <span className="mono" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700, color: "var(--accent-amber)" }}>
                 TARGET Rp 5.480
               </span>
             }
+            className="panel-chart"
             style={{ height: 368, flexShrink: 0 }}
           >
             <ForecastChart />
@@ -194,7 +195,7 @@ export default function PrediksiPage() {
                       {s.name}
                     </td>
                     <td className="left">{s.probability}</td>
-                    <td className="left" style={{ fontWeight: 600, fontSize: 12 }}>
+                    <td className="left" style={{ fontWeight: 600, fontSize: "calc(12px * var(--fs-scale))" }}>
                       {s.target}
                     </td>
                     <td className="left" style={{ fontWeight: 600, color: TONE_COLOR[s.tone] }}>
@@ -202,7 +203,7 @@ export default function PrediksiPage() {
                     </td>
                     <td className="left">{s.roe}</td>
                     <td className="left">{s.growth}</td>
-                    <td className="left truncate dim" style={{ fontFamily: "var(--font-sans)", fontSize: 11, width: "100%" }}>
+                    <td className="left truncate dim" style={{ fontFamily: "var(--font-sans)", fontSize: "calc(11px * var(--fs-scale))", width: "100%" }}>
                       {s.assumption}
                     </td>
                   </tr>
@@ -227,7 +228,7 @@ export default function PrediksiPage() {
               <tbody>
                 {PORTFOLIO_FORECAST.map((f) => (
                   <tr key={f.ticker}>
-                    <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: 11 }}>
+                    <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: "calc(11px * var(--fs-scale))" }}>
                       {f.ticker}
                     </td>
                     <td>{f.target}</td>
@@ -257,10 +258,10 @@ export default function PrediksiPage() {
                 return (
                   <div key={d.label} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                      <span className="truncate" style={{ flexGrow: 1, fontSize: 10.5, width: "100%" }}>
+                      <span className="truncate" style={{ flexGrow: 1, fontSize: "calc(10.5px * var(--fs-scale))", width: "100%" }}>
                         {d.label}
                       </span>
-                      <span className="mono" style={{ fontSize: 10, fontWeight: 600, color }}>
+                      <span className="mono" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, color }}>
                         {d.value > 0 ? "+" : ""}
                         {d.value.toFixed(2).replace(".", ",")}
                       </span>
@@ -287,27 +288,27 @@ export default function PrediksiPage() {
           <Panel title="Sinyal Gabungan" chip="PEMBARUAN HARIAN" style={{ height: 196 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="mono pos" style={{ fontSize: 30, fontWeight: 700 }}>
+                <span className="mono pos" style={{ fontSize: "calc(30px * var(--fs-scale))", fontWeight: 700 }}>
                   {COMBINED_SIGNAL.verdict}
                 </span>
                 <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span className="dim" style={{ fontSize: 10.5 }}>
+                  <span className="dim" style={{ fontSize: "calc(10.5px * var(--fs-scale))" }}>
                     Konsensus {COMBINED_SIGNAL.analysts} analis
                   </span>
-                  <span className="mono" style={{ fontSize: 11 }}>
+                  <span className="mono" style={{ fontSize: "calc(11px * var(--fs-scale))" }}>
                     {COMBINED_SIGNAL.consensus}
                   </span>
                 </div>
               </div>
               {COMBINED_SIGNAL.rows.map((r) => (
                 <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className="dim" style={{ width: 96, flexShrink: 0, fontSize: 10.5 }}>
+                  <span className="dim" style={{ width: 96, flexShrink: 0, fontSize: "calc(10.5px * var(--fs-scale))" }}>
                     {r.label}
                   </span>
                   <div style={{ flexGrow: 1, height: 7, background: "var(--bg-panel-header)" }}>
                     <div style={{ width: `${r.value}%`, height: 7, background: r.up ? "var(--status-positive)" : "var(--status-negative)" }} />
                   </div>
-                  <span className={`mono ${r.up ? "pos" : "neg"}`} style={{ width: 54, textAlign: "right", fontSize: 10, fontWeight: 600 }}>
+                  <span className={`mono ${r.up ? "pos" : "neg"}`} style={{ width: 54, textAlign: "right", fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600 }}>
                     {r.verdict}
                   </span>
                 </div>
@@ -319,14 +320,14 @@ export default function PrediksiPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {ACCURACY_HISTORY.map((a) => (
                 <div key={a.ticker} style={{ display: "flex", alignItems: "baseline", gap: 8, paddingBottom: 7, borderBottom: "1px solid var(--border-row)" }}>
-                  <span className="mono dim" style={{ width: 46, flexShrink: 0, fontSize: 11, fontWeight: 700 }}>
+                  <span className="mono dim" style={{ width: 46, flexShrink: 0, fontSize: "calc(11px * var(--fs-scale))", fontWeight: 700 }}>
                     {a.ticker}
                   </span>
-                  <span style={{ flexGrow: 1, fontSize: 10.5 }}>{a.note}</span>
+                  <span style={{ flexGrow: 1, fontSize: "calc(10.5px * var(--fs-scale))" }}>{a.note}</span>
                   <span
                     className="mono"
                     style={{
-                      fontSize: 11,
+                      fontSize: "calc(11px * var(--fs-scale))",
                       fontWeight: 600,
                       color:
                         a.tone === "good" ? "var(--status-positive)" : a.tone === "warn" ? "var(--accent-amber)" : "var(--status-negative)",

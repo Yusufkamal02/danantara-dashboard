@@ -41,6 +41,10 @@
 
   /* Height of the price chart slot. */
   --chart-h: 420px;
+
+  /* Multiplies every font size. 1 on desktop keeps the terminal exactly as
+     designed; phones raise it so the dense panels stay legible. */
+  --fs-scale: 1;
 }
 
 *,
@@ -156,7 +160,7 @@ button {
 }
 
 .appbar-subtitle {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs-scale));
   color: var(--text-secondary);
   padding-left: 16px;
   border-left: 1px solid var(--border-hairline);
@@ -193,7 +197,7 @@ button {
   display: flex;
   align-items: center;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs-scale));
   text-decoration: none;
   white-space: nowrap;
   border-right: 1px solid var(--border-hairline);
@@ -232,7 +236,7 @@ button {
 
 .panel-title {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs-scale));
   font-weight: 600;
   letter-spacing: 0.09em;
   color: var(--accent-amber);
@@ -252,7 +256,7 @@ button {
 .chip {
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: calc(9px * var(--fs-scale));
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--text-secondary);
@@ -305,7 +309,7 @@ button {
   padding: 0 6px 5px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-hairline);
-  font-size: 9px;
+  font-size: calc(9px * var(--fs-scale));
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--text-secondary);
@@ -321,7 +325,7 @@ button {
 .tbl td {
   padding: 5px 6px;
   border-bottom: 1px solid var(--border-row);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs-scale));
   text-align: right;
   white-space: nowrap;
 }
@@ -478,6 +482,9 @@ button {
 @media (max-width: 640px) {
   :root {
     --chart-h: 300px;
+    /* Raise every font size at once. The terminal's 9–11px labels read fine
+       at arm's length on a monitor and are unreadable in the hand. */
+    --fs-scale: 1.18;
   }
   .main-grid {
     gap: 6px;
@@ -516,15 +523,44 @@ button {
   .col-right > * {
     flex: none;
   }
-  .panel-grow {
-    min-height: 200px;
-  }
   .tabstrip-sync {
     display: none;
   }
   /* One tile per row: "Rp 16.850 T" does not fit half a phone. */
   .tile-row {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Larger text needs more room, so panels size to their content instead of
+     clipping at the height the desktop layout gave them. Panels holding a
+     chart that fills its box keep a definite height — `panel-chart`. */
+  .panel:not(.panel-chart) {
+    height: auto !important;
+  }
+  .panel-grow {
+    min-height: 340px;
+  }
+
+  /* Wide tables scroll sideways; their track grows with the type. */
+  .tbl-wide {
+    min-width: calc(840px * var(--fs-scale));
+  }
+  .tbl-mid {
+    min-width: calc(620px * var(--fs-scale));
+  }
+
+  /* Charts whose viewBox is far wider than the space they get would render
+     9-unit labels at under 4px. Their text is in viewBox units, so it is set
+     directly rather than scaled — except labels inside a fixed-size badge,
+     which would overflow it. */
+  .chart-wide text:not(.fixed-label) {
+    font-size: 16px;
+  }
+
+  /* Bigger labels need fewer of them: every other tick is enough to read the
+     axis, and the rest only collide. */
+  .chart-wide .x-ticks text:nth-of-type(even) {
+    display: none;
   }
 }
 

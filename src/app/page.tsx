@@ -24,7 +24,7 @@ export default function IkhtisarPage() {
       >
         {/* ---------------- left ---------------- */}
         <div className="col col-left">
-          <Panel title="Filter Global" chip="REGION · SEKTOR" style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
+          <Panel title="Filter Global" chip="REGION · SEKTOR" className="panel-chart" style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
             <Treemap
               rows={[
                 [
@@ -74,10 +74,10 @@ export default function IkhtisarPage() {
               <tbody>
                 {TOP_HOLDINGS.map((h) => (
                   <tr key={h.ticker}>
-                    <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: 11 }}>
+                    <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: "calc(11px * var(--fs-scale))" }}>
                       {h.ticker}
                     </td>
-                    <td className="left truncate" style={{ fontFamily: "var(--font-sans)", fontSize: 11, width: "100%" }}>
+                    <td className="left truncate" style={{ fontFamily: "var(--font-sans)", fontSize: "calc(11px * var(--fs-scale))", width: "100%" }}>
                       {h.name}
                     </td>
                     <td className={h.changePct >= 0 ? "pos" : "neg"} style={{ fontWeight: 600 }}>
@@ -149,16 +149,16 @@ export default function IkhtisarPage() {
                       borderBottom: "1px solid var(--border-row)",
                     }}
                   >
-                    <span className="mono dim" style={{ fontSize: 10 }}>
+                    <span className="mono dim" style={{ fontSize: "calc(10px * var(--fs-scale))" }}>
                       {n.time}
                     </span>
                     <span
                       className={`mono ${n.tone === "up" ? "pos" : n.tone === "down" ? "neg" : "dim"}`}
-                      style={{ fontSize: 10, fontWeight: 700 }}
+                      style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700 }}
                     >
                       {n.ticker}
                     </span>
-                    <span className="truncate" style={{ fontSize: 11.5, width: "100%" }}>
+                    <span className="truncate" style={{ fontSize: "calc(11.5px * var(--fs-scale))", width: "100%" }}>
                       {n.headline}
                     </span>
                   </div>
@@ -179,13 +179,13 @@ export default function IkhtisarPage() {
                       borderBottom: "1px solid var(--border-row)",
                     }}
                   >
-                    <span className="mono" style={{ width: 44, flexShrink: 0, fontSize: 10, fontWeight: 600, color: "var(--accent-amber)" }}>
+                    <span className="mono" style={{ width: 44, flexShrink: 0, fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, color: "var(--accent-amber)" }}>
                       {c.date}
                     </span>
-                    <span className="mono dim" style={{ width: 42, flexShrink: 0, fontSize: 10, fontWeight: 700 }}>
+                    <span className="mono dim" style={{ width: 42, flexShrink: 0, fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700 }}>
                       {c.ticker}
                     </span>
-                    <span className="truncate" style={{ fontSize: 11, width: "100%" }}>
+                    <span className="truncate" style={{ fontSize: "calc(11px * var(--fs-scale))", width: "100%" }}>
                       {c.event.includes("RUPS") ? <Term k="RUPS" label={c.event} /> : c.event.includes("Cum date") ? <Term k="Cum Date" label={c.event} /> : c.event}
                     </span>
                   </div>
@@ -197,7 +197,7 @@ export default function IkhtisarPage() {
 
         {/* ---------------- right ---------------- */}
         <div className="col col-right">
-          <Panel title="Pendapatan per Segmen" chip="BBRI · 9M-26" style={{ height: 170 }} bodyStyle={{ padding: 8 }}>
+          <Panel title="Pendapatan per Segmen" chip="BBRI · 9M-26" className="panel-chart" style={{ height: 170 }} bodyStyle={{ padding: 8 }}>
             <Treemap
               labelSize={9}
               rows={[
@@ -218,7 +218,7 @@ export default function IkhtisarPage() {
             <Donut slices={HIMBARA_SHARE} centre="Rp 7,1 rb T" caption="total kredit" />
           </Panel>
 
-          <Panel title="Pertumbuhan Pendapatan YoY" chip={<Term k="YoY" label="AGREGAT" />} style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
+          <Panel title="Pertumbuhan Pendapatan YoY" chip={<Term k="YoY" label="AGREGAT" />} className="panel-chart" style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
             <YoYArea data={YOY_GROWTH} />
           </Panel>
 

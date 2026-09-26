@@ -67,7 +67,7 @@ export function KpiTile({
     >
       <span
         style={{
-          fontSize: 10,
+          fontSize: "calc(10px * var(--fs-scale))",
           fontWeight: 600,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
@@ -79,16 +79,16 @@ export function KpiTile({
       >
         {label}
       </span>
-      <span className="mono" style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.05 }}>
+      <span className="mono" style={{ fontSize: "calc(22px * var(--fs-scale))", fontWeight: 600, lineHeight: 1.05 }}>
         {value}
       </span>
       <span style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
-        <span className="mono" style={{ fontSize: 11, fontWeight: 600, color, whiteSpace: "nowrap" }}>
+        <span className="mono" style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600, color, whiteSpace: "nowrap" }}>
           {delta}
         </span>
         <span
           className="dim"
-          style={{ fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+          style={{ fontSize: "calc(10px * var(--fs-scale))", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
         >
           {foot}
         </span>
@@ -113,8 +113,8 @@ export function BarRow({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-        <span style={{ flexGrow: 1, fontSize: 11, minWidth: 0 }}>{label}</span>
-        <span className="mono" style={{ fontSize: 11, fontWeight: 600, color }}>
+        <span style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))", minWidth: 0 }}>{label}</span>
+        <span className="mono" style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600, color }}>
           {value}
         </span>
       </div>
@@ -163,7 +163,7 @@ export function AlertRow({
           flexShrink: 0,
           marginTop: 1,
           padding: "2px 4px",
-          fontSize: 8,
+          fontSize: "calc(8px * var(--fs-scale))",
           fontWeight: 700,
           letterSpacing: "0.06em",
           color: "var(--text-on-accent)",
@@ -172,7 +172,7 @@ export function AlertRow({
       >
         {label}
       </span>
-      <span style={{ fontSize: 11, lineHeight: 1.35 }}>{children}</span>
+      <span style={{ fontSize: "calc(11px * var(--fs-scale))", lineHeight: 1.35 }}>{children}</span>
     </div>
   );
 }

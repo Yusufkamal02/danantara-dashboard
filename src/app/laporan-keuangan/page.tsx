@@ -51,13 +51,13 @@ export default function LaporanKeuanganPage() {
                     borderBottom: "1px solid var(--border-row)",
                   }}
                 >
-                  <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                  <span className="mono" style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 700, color: i === 0 ? "var(--text-primary)" : "var(--text-secondary)" }}>
                     {e.ticker}
                   </span>
-                  <span className="truncate" style={{ fontSize: 11, color: i === 0 ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                  <span className="truncate" style={{ fontSize: "calc(11px * var(--fs-scale))", color: i === 0 ? "var(--text-primary)" : "var(--text-secondary)" }}>
                     {e.name}
                   </span>
-                  <span className={`mono ${e.roe < 0 ? "neg" : "pos"}`} style={{ fontSize: 10, fontWeight: 600, textAlign: "right" }}>
+                  <span className={`mono ${e.roe < 0 ? "neg" : "pos"}`} style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, textAlign: "right" }}>
                     {e.roe.toFixed(1).replace(".", ",")}%
                   </span>
                 </div>
@@ -70,10 +70,10 @@ export default function LaporanKeuanganPage() {
           <Panel title="Kepemilikan Danantara" chip="BBRI" style={{ height: 160 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span className="mono" style={{ fontSize: 26, fontWeight: 700 }}>
+                <span className="mono" style={{ fontSize: "calc(26px * var(--fs-scale))", fontWeight: 700 }}>
                   {OWNERSHIP_PANEL.ownedPct.toString().replace(".", ",")}%
                 </span>
-                <span className="dim" style={{ fontSize: 11 }}>
+                <span className="dim" style={{ fontSize: "calc(11px * var(--fs-scale))" }}>
                   saham dimiliki Danantara
                 </span>
               </div>
@@ -83,10 +83,10 @@ export default function LaporanKeuanganPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: "8px 10px" }}>
                 {OWNERSHIP_PANEL.stats.map((s) => (
                   <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <span className="dim" style={{ fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    <span className="dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                       {s.label}
                     </span>
-                    <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>
+                    <span className="mono" style={{ fontSize: "calc(12px * var(--fs-scale))", fontWeight: 600 }}>
                       {s.value}
                     </span>
                   </div>
@@ -100,8 +100,8 @@ export default function LaporanKeuanganPage() {
               {DATA_SOURCES.map((s) => (
                 <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--status-positive)" }} />
-                  <span style={{ flexGrow: 1, fontSize: 11 }}>{s.label}</span>
-                  <span className="mono dim" style={{ fontSize: 9 }}>
+                  <span style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))" }}>{s.label}</span>
+                  <span className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))" }}>
                     {s.freshness === "T+1" ? <Term k="T+1" label="T+1" /> : s.freshness}
                   </span>
                 </div>
@@ -132,20 +132,20 @@ export default function LaporanKeuanganPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span className="mono dim" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
+                    <span className="mono dim" style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.1em" }}>
                       <Term k={r.label} />
                     </span>
                     <span style={{ flexGrow: 1 }} />
-                    <span className="mono" style={{ fontSize: 20, fontWeight: 600 }}>
+                    <span className="mono" style={{ fontSize: "calc(20px * var(--fs-scale))", fontWeight: 600 }}>
                       {r.value}
                     </span>
                   </div>
                   <Sparkline values={r.series} color={color} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span className="mono" style={{ fontSize: 10, fontWeight: 600, color }}>
+                    <span className="mono" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, color }}>
                       {r.qoq}
                     </span>
-                    <span className="mono dim" style={{ fontSize: 10 }}>
+                    <span className="mono dim" style={{ fontSize: "calc(10px * var(--fs-scale))" }}>
                       {r.yoy}
                     </span>
                   </div>
@@ -157,6 +157,7 @@ export default function LaporanKeuanganPage() {
           <Panel
             title="Tren Rasio Profitabilitas — 9 Kuartal"
             chip="ROE · ROI · ROA"
+            className="panel-chart"
             style={{ height: 248, flexShrink: 0 }}
           >
             <RatioTrend quarters={QUARTERS} series={TREND_SERIES} />
@@ -188,7 +189,7 @@ export default function LaporanKeuanganPage() {
               <tbody>
                 {INCOME_STATEMENT.map((row) => (
                   <tr key={row.label} style={{ background: row.strong ? "var(--bg-row-alt)" : undefined }}>
-                    <td className="left" style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, fontWeight: row.strong ? 600 : 400 }}>
+                    <td className="left" style={{ fontFamily: "var(--font-sans)", fontSize: "calc(11.5px * var(--fs-scale))", fontWeight: row.strong ? 600 : 400 }}>
                       {row.label === "PPOP" ? <Term k="PPOP" /> : row.label === "Beban CKPN" ? <>Beban <Term k="CKPN" /></> : row.label === "Laba per saham (Rp)" ? <><Term k="EPS" label="Laba per saham" /> (Rp)</> : row.label}
                     </td>
                     <td style={{ fontWeight: row.strong ? 600 : 400 }}>{row.q3}</td>
@@ -231,18 +232,18 @@ export default function LaporanKeuanganPage() {
                         gap: 2,
                       }}
                     >
-                      <span className="dim" style={{ fontSize: 9.5, lineHeight: 1.2 }}>
+                      <span className="dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", lineHeight: 1.2 }}>
                         {d.label}
                       </span>
-                      <span className="mono" style={{ fontSize: 15, fontWeight: 600 }}>
+                      <span className="mono" style={{ fontSize: "calc(15px * var(--fs-scale))", fontWeight: 600 }}>
                         {d.value}
                       </span>
-                      <span className={`mono ${d.up ? "pos" : "neg"}`} style={{ fontSize: 9.5, fontWeight: 600 }}>
+                      <span className={`mono ${d.up ? "pos" : "neg"}`} style={{ fontSize: "calc(9.5px * var(--fs-scale))", fontWeight: 600 }}>
                         {d.delta}
                       </span>
                     </div>
                     {i < DUPONT.length - 1 && (
-                      <span className="mono dim" style={{ alignSelf: "center", fontSize: 14 }}>
+                      <span className="mono dim" style={{ alignSelf: "center", fontSize: "calc(14px * var(--fs-scale))" }}>
                         ×
                       </span>
                     )}
@@ -250,11 +251,11 @@ export default function LaporanKeuanganPage() {
                 ))}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 7, borderTop: "1px solid var(--border-hairline)" }}>
-                <span className="dim" style={{ fontSize: 11 }}>
+                <span className="dim" style={{ fontSize: "calc(11px * var(--fs-scale))" }}>
                   Menghasilkan <Term k="ROE" />
                 </span>
                 <span style={{ flexGrow: 1 }} />
-                <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: "var(--accent-amber)" }}>
+                <span className="mono" style={{ fontSize: "calc(18px * var(--fs-scale))", fontWeight: 700, color: "var(--accent-amber)" }}>
                   16,8%
                 </span>
               </div>
@@ -293,13 +294,13 @@ export default function LaporanKeuanganPage() {
               <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
                 {FUNDAMENTAL_SCORE.factors.map((f) => (
                   <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span className="dim" style={{ width: 82, flexShrink: 0, fontSize: 10.5 }}>
+                    <span className="dim" style={{ width: 82, flexShrink: 0, fontSize: "calc(10.5px * var(--fs-scale))" }}>
                       {f.label}
                     </span>
                     <div style={{ flexGrow: 1, height: 6, background: "var(--bg-panel-header)" }}>
                       <div style={{ width: `${f.value}%`, height: 6, background: f.good ? "var(--status-positive)" : "var(--accent-amber)" }} />
                     </div>
-                    <span className="mono" style={{ width: 20, textAlign: "right", fontSize: 10 }}>
+                    <span className="mono" style={{ width: 20, textAlign: "right", fontSize: "calc(10px * var(--fs-scale))" }}>
                       {f.value}
                     </span>
                   </div>
@@ -311,13 +312,13 @@ export default function LaporanKeuanganPage() {
           <Panel title="Ringkasan Otomatis" chip="DIBUAT AI" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {AI_SUMMARY.map((p) => (
-                <p key={p.slice(0, 20)} style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5 }}>
+                <p key={p.slice(0, 20)} style={{ margin: 0, fontSize: "calc(11.5px * var(--fs-scale))", lineHeight: 1.5 }}>
                   {p}
                 </p>
               ))}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {AI_SUMMARY_SOURCES.map((s) => (
-                  <span key={s} className="mono dim" style={{ fontSize: 9, border: "1px solid var(--border-hairline)", padding: "2px 5px" }}>
+                  <span key={s} className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))", border: "1px solid var(--border-hairline)", padding: "2px 5px" }}>
                     {s}
                   </span>
                 ))}
@@ -328,7 +329,7 @@ export default function LaporanKeuanganPage() {
                 style={{
                   alignSelf: "flex-start",
                   padding: "6px 10px",
-                  fontSize: 10,
+                  fontSize: "calc(10px * var(--fs-scale))",
                   fontWeight: 600,
                   textDecoration: "none",
                   color: "var(--text-on-accent)",

@@ -61,6 +61,28 @@ merespons lebar layar.
 | 641–959px | Satu kolom; urutan baca: konten utama, filter, lalu rail |
 | ≤ 640px | Semua menumpuk; KPI satu per baris; pita harga jadi baris sendiri yang bisa digeser |
 
+### Skala teks
+
+Setiap ukuran font ditulis sebagai `calc(Npx * var(--fs-scale))`. Nilainya `1`
+di desktop, jadi tampilan terminal aslinya tidak berubah satu piksel pun, dan
+naik ke `1,18` di layar ≤ 640px. Hierarki tipografi ikut terjaga karena yang
+dikalikan adalah nilai aslinya, bukan dipetakan ke beberapa ukuran tetap.
+
+Teks di dalam SVG dikecualikan dari faktor itu karena satuannya viewBox, bukan
+piksel. Tiga grafik yang viewBox-nya jauh lebih lebar dari ruang yang didapat
+di ponsel — grafik harga, fan chart proyeksi, dan tren rasio — labelnya akan
+tampil di bawah 4px, jadi ukurannya diatur langsung (`.chart-wide`), tick
+sumbu-x diselang-seling, dan label yang duduk di dalam badge berukuran tetap
+dikecualikan agar tidak meluber. Grafik lain (donat, area YoY, sparkline)
+sudah proporsional dan tidak disentuh.
+
+Karena teks membesar, panel di ponsel menyesuaikan tinggi ke isinya. Panel yang
+memuat grafik pengisi-kotak ditandai `panel-chart` dan mempertahankan tinggi
+pasti — tanpa itu grafiknya akan menciut jadi nol.
+
+Batas yang diketahui: ponsel dalam orientasi lanskap (lebar > 640px) tidak
+mendapat kenaikan skala ini.
+
 Perilaku lain di layar kecil:
 
 - Tabel lebar (Holdings 11 kolom, Laba Rugi, Skenario) mempertahankan lebar
