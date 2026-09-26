@@ -143,10 +143,28 @@ export function Shell({
 }) {
   return (
     <div className="screen">
+      <MockupNotice />
       <AppBar subtitle={subtitle} />
       <CommandBand command={command} meta={meta} />
       <TabStrip sync={sync} />
       {children}
+    </div>
+  );
+}
+
+/**
+ * Permanent, non-dismissible strip. The screens attach invented figures to a
+ * real sovereign fund and real listed issuers, and the deployment URL is open
+ * to anyone holding the link — so the caveat travels with every screenshot.
+ */
+function MockupNotice() {
+  return (
+    <div className="mockup-notice" role="note">
+      <span className="mono mockup-notice-tag">MOCKUP PoC</span>
+      <span>
+        Seluruh angka di layar ini <strong>data contoh</strong>, bukan data Danantara sebenarnya. Nama emiten nyata,
+        nilainya fiktif. Tidak untuk pengambilan keputusan.
+      </span>
     </div>
   );
 }

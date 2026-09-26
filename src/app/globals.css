@@ -594,3 +594,42 @@ button {
     height: auto !important;
   }
 }
+
+/* ---------- mockup disclaimer ---------- */
+/* Deliberately not dismissible: the deployment is reachable by anyone with
+   the link, so the caveat must stay in every screenshot. */
+.mockup-notice {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background: #2a1d05;
+  border-bottom: 1px solid var(--accent-amber);
+  font-size: calc(11px * var(--fs-scale));
+  line-height: 1.35;
+  color: #f0d9a8;
+}
+
+.mockup-notice strong {
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.mockup-notice-tag {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  background: var(--accent-amber);
+  color: var(--text-on-accent);
+  font-size: calc(9px * var(--fs-scale));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 640px) {
+  .mockup-notice {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+}

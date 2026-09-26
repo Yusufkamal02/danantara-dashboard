@@ -1,0 +1,4 @@
+# Mockup PoC with sample data attached to real issuer names.
+# Kept out of search engines on purpose.
+User-agent: *
+Disallow: /

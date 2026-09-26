@@ -7,6 +7,30 @@ Dibangun dari lima layar desain yang sudah disetujui dan dari
 > **Seluruh angka di aplikasi ini adalah DATA CONTOH.** Nama emiten nyata,
 > nilainya tidak. Tidak ada koneksi ke IDX, XBRL, Supabase, atau model apa pun.
 
+## Live
+
+https://out-green-omega.vercel.app
+
+Deployment statis di Vercel, proyek `danantara-dashboard-poc`. Tautannya
+terbuka bagi siapa pun yang memegangnya — Vercel Authentication sengaja
+dimatikan agar rekan kerja di luar tim Vercel bisa membukanya. Karena itu:
+
+- `robots.txt` dan meta `noindex` menahannya dari mesin pencari;
+- ada banner permanen di setiap halaman yang menyatakan seluruh angkanya data
+  contoh, sehingga peringatan itu ikut terbawa di setiap tangkapan layar;
+- judul halaman juga memuat "Mockup PoC (Data Contoh)" agar pratinjau tautan
+  tidak terbaca sebagai alat pelaporan Danantara.
+
+Jangan sebarkan di luar tim. Untuk proteksi sungguhan (password atau SSO)
+perlu paket Vercel berbayar.
+
+Deploy ulang:
+
+```bash
+npm run build
+npx vercel deploy out --prod
+```
+
 ## Menjalankan
 
 ```bash

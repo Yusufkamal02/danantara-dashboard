@@ -17,9 +17,14 @@ const plexCondensed = IBM_Plex_Sans_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Danantara Analytics Terminal",
+  // The title carries the caveat too, so a pasted link previews as a mockup
+  // rather than as a Danantara reporting tool.
+  title: "Mockup PoC — Danantara Analytics Terminal (Data Contoh)",
   description:
-    "Mockup PoC — Investment Intelligence Platform untuk portofolio Danantara. Seluruh angka adalah data contoh.",
+    "Mockup proof-of-concept. Seluruh angka adalah data contoh, bukan data Danantara sebenarnya, dan tidak untuk pengambilan keputusan.",
+  // Deliberately kept out of search engines: the screens attach invented
+  // figures to a real institution and real listed issuers.
+  robots: { index: false, follow: false, nocache: true },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
