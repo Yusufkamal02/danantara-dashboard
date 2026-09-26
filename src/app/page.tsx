@@ -15,7 +15,7 @@ export default function IkhtisarPage() {
   return (
     <Shell
       subtitle="Portfolio Analytics Terminal"
-      command=">BBRI IJ EQUITY<GO>"
+      command="BBRI IJ EQUITY"
       meta={`IKHTISAR PORTOFOLIO · ${PORTFOLIO_TOTALS.issuers} EMITEN · NAV Rp ${PORTFOLIO_TOTALS.nav.toLocaleString("id-ID")} T`}
     >
       <main
