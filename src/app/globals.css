@@ -1,7 +1,10 @@
 /*
- * Danantara Analytics Terminal — design tokens.
- * Values match the approved mockup 1:1 (see docs/DESIGN.md).
+ * Danantara Analytics Terminal — design tokens and layout.
+ * Values match the approved mockup 1:1 (see README.md).
  * The terminal is dark-only by design; there is no light theme.
+ *
+ * Layout lives here rather than in inline styles so it can respond to
+ * viewport width — inline styles cannot carry media queries.
  */
 :root {
   --bg-base: #05070a;
@@ -31,6 +34,13 @@
 
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
   --font-sans: var(--font-plex-condensed), system-ui, sans-serif;
+
+  /* Side-column widths; each screen sets its own. */
+  --col-left: 250px;
+  --col-right: 274px;
+
+  /* Height of the price chart slot. */
+  --chart-h: 420px;
 }
 
 *,
@@ -47,6 +57,8 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Stops iOS inflating type in the dense panels on rotate. */
+  -webkit-text-size-adjust: 100%;
 }
 
 a {
@@ -66,7 +78,6 @@ button {
   outline-offset: 1px;
 }
 
-/* Screen readers only. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -89,8 +100,113 @@ button {
   flex-grow: 1;
   min-height: 0;
   display: grid;
+  grid-template-columns: var(--col-left) minmax(0, 1fr) var(--col-right);
   gap: 8px;
   padding: 10px 12px;
+  align-items: stretch;
+}
+
+/* A stack of panels. One per grid cell. */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chart-slot {
+  height: var(--chart-h);
+  flex-shrink: 0;
+  display: flex;
+}
+
+/* A row of KPI or ratio tiles. Becomes a grid once the tiles would be too
+   narrow to hold their own numbers. */
+.tile-row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  height: var(--tile-h, 76px);
+}
+
+/* Two panels side by side that stack on small screens. */
+.split-row {
+  display: flex;
+  gap: 8px;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* The panel that soaks up whatever height is left in its column. */
+.panel-grow {
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* ---------- app chrome ---------- */
+.appbar {
+  flex-shrink: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px;
+  background: var(--bg-panel-header);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.appbar-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding-left: 16px;
+  border-left: 1px solid var(--border-hairline);
+  white-space: nowrap;
+}
+
+.appbar-tape {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.appbar-tape::-webkit-scrollbar {
+  display: none;
+}
+
+.tabstrip {
+  flex-shrink: 0;
+  height: 24px;
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-hairline);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabstrip::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  border-right: 1px solid var(--border-hairline);
+}
+
+.cmdband {
+  flex-shrink: 0;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: var(--band-command);
 }
 
 /* ---------- panel ---------- */
@@ -105,7 +221,7 @@ button {
 
 .panel-head {
   flex-shrink: 0;
-  height: 22px;
+  min-height: 22px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -160,11 +276,26 @@ button {
 }
 
 /* ---------- tables ---------- */
+/* Wide tables keep their column widths and scroll sideways rather than
+   crushing every number into an unreadable column. */
+.table-scroll {
+  overflow: auto;
+  height: 100%;
+}
+
 .tbl {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.tbl-wide {
+  min-width: 840px;
+}
+
+.tbl-mid {
+  min-width: 620px;
 }
 
 .tbl th {
@@ -241,7 +372,28 @@ button {
   color: var(--accent-amber);
 }
 
-/* Glossary affordance beside a sortable header. */
+/* ---------- glossary term ---------- */
+.term {
+  border-bottom: 1px dotted var(--text-secondary);
+  cursor: help;
+}
+
+.term-tip {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 268px;
+  max-width: min(268px, calc(100vw - 32px));
+  padding: 9px 11px;
+  background: #11161f;
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  cursor: default;
+  text-align: left;
+  white-space: normal;
+}
+
 .th-info {
   border-bottom: 0 !important;
   opacity: 0.6;
@@ -251,8 +403,149 @@ button {
   color: var(--accent-amber);
 }
 
-/* ---------- glossary term ---------- */
-.term {
-  border-bottom: 1px dotted var(--text-secondary);
-  cursor: help;
+/* =================================================================
+   Responsive behaviour
+   ================================================================= */
+
+/* Below the full three-column terminal the right-hand rail drops beneath the
+   main column and its panels flow as a row of cards. */
+@media (max-width: 1279px) {
+  .main-grid {
+    grid-template-columns: var(--col-left) minmax(0, 1fr);
+  }
+  .col-right {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .col-right > * {
+    flex: 1 1 300px;
+    min-height: 190px;
+  }
+}
+
+/* Tablet and below: one column. The main content leads, filters follow, the
+   rail last — reading order, not source order. */
+@media (max-width: 959px) {
+  :root {
+    --chart-h: 360px;
+  }
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .col-left,
+  .col-right {
+    grid-column: auto;
+  }
+  .col-main {
+    order: 1;
+  }
+  .col-left {
+    order: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .col-left > * {
+    flex: 1 1 300px;
+    min-height: 190px;
+  }
+  .col-right {
+    order: 3;
+  }
+  .panel-grow {
+    min-height: 240px;
+  }
+  .appbar-subtitle {
+    display: none;
+  }
+  /* Four tiles across is unreadable here; two rows of two is not. */
+  .tile-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: auto;
+  }
+  .split-row {
+    flex-direction: column;
+  }
+  .split-row > * {
+    width: auto !important;
+    min-height: 240px;
+  }
+}
+
+/* Phone: stack everything, drop the market tape to its own scrolling row,
+   and let panels size to their content. */
+@media (max-width: 640px) {
+  :root {
+    --chart-h: 300px;
+  }
+  .main-grid {
+    gap: 6px;
+    padding: 6px;
+  }
+  .appbar {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+  .appbar-tape {
+    order: 3;
+    width: 100%;
+    padding-bottom: 2px;
+    border-top: 1px solid var(--border-hairline);
+    padding-top: 6px;
+  }
+  .cmdband {
+    padding: 3px 8px;
+  }
+  .cmdband-meta {
+    display: none;
+  }
+  .tabstrip {
+    height: 34px;
+  }
+  .tab {
+    padding: 0 14px;
+  }
+  .col-left,
+  .col-right {
+    flex-direction: column;
+  }
+  .col-left > *,
+  .col-right > * {
+    flex: none;
+  }
+  .panel-grow {
+    min-height: 200px;
+  }
+  .tabstrip-sync {
+    display: none;
+  }
+  /* One tile per row: "Rp 16.850 T" does not fit half a phone. */
+  .tile-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Touch devices and phones get larger hit areas on the controls that matter,
+   without loosening the desktop terminal's density. */
+@media (pointer: coarse) {
+  .tab {
+    min-height: 34px;
+  }
+  .th-sort {
+    min-height: 28px;
+  }
+  .tbl td {
+    padding: 8px 6px;
+  }
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .tap {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
 }

@@ -49,6 +49,34 @@ npm run build    # keluarannya di out/
   HHI, PER bisa di-hover atau di-Tab untuk memunculkan definisi yang ditarik
   dari Knowledge Base, lengkap dengan nomor bagiannya.
 
+## Responsif
+
+Tata letak ditulis di `src/app/globals.css`, bukan inline style, supaya bisa
+merespons lebar layar.
+
+| Lebar | Susunan |
+|---|---|
+| ≥ 1280px | Tiga kolom penuh, seperti desain terminal aslinya |
+| 960–1279px | Dua kolom; rail kanan turun ke bawah sebagai baris kartu |
+| 641–959px | Satu kolom; urutan baca: konten utama, filter, lalu rail |
+| ≤ 640px | Semua menumpuk; KPI satu per baris; pita harga jadi baris sendiri yang bisa digeser |
+
+Perilaku lain di layar kecil:
+
+- Tabel lebar (Holdings 11 kolom, Laba Rugi, Skenario) mempertahankan lebar
+  kolomnya dan digeser horizontal di dalam panel — angka tidak diremas sampai
+  tak terbaca, dan halaman itu sendiri tidak pernah meluber.
+- Baris TOTAL pada Holdings ikut menggeser bersama tabelnya karena berbagi
+  grid kolom yang sama.
+- Tinggi grafik harga menyusut 420 → 360 → 300px.
+- Tab dan pita harga bisa digeser horizontal tanpa scrollbar yang terlihat.
+- Target sentuh diperbesar ke 32px pada perangkat touch dan layar ≤ 640px.
+- Tooltip glosarium dibatasi `calc(100vw - 32px)` agar tidak keluar layar, dan
+  bisa dibuka lewat ketuk, bukan hanya hover.
+
+Diverifikasi di 5 halaman × 5 lebar (1600 / 1280 / 1100 / 820 / 390): jumlah
+kolom sesuai dan nol overflow horizontal.
+
 ## Struktur
 
 ```

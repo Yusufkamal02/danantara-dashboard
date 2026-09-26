@@ -40,9 +40,12 @@ export default function ChatPage() {
       command=">AI CHAT · SUMBER: XBRL + IDX API + MODEL<GO>"
       meta="6.188 DOKUMEN TERINDEKS · JAWABAN SELALU BERSUMBER"
     >
-      <main className="main-grid" style={{ gridTemplateColumns: "262px minmax(0, 1fr) 330px" }}>
+      <main
+        className="main-grid"
+        style={{ "--col-left": "262px", "--col-right": "330px" } as React.CSSProperties}
+      >
         {/* ---------------- left ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-left">
           <Panel title="Riwayat Percakapan" chip="BARU" style={{ height: 330 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {CHAT_HISTORY.map((g) => (
@@ -55,7 +58,7 @@ export default function ChatPage() {
                       key={item}
                       type="button"
                       onClick={() => ask(item)}
-                      className="truncate"
+                      className="truncate tap"
                       style={{
                         display: "block",
                         width: "100%",
@@ -112,7 +115,7 @@ export default function ChatPage() {
             </div>
           </Panel>
 
-          <Panel title="Batasan Akses" chip={<Term k="RBAC" label="PERAN: ANALIS" />} style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Batasan Akses" chip={<Term k="RBAC" label="PERAN: ANALIS" />} className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.5 }}>
               Anda dapat membaca seluruh data pasar dan laporan publik. Notulen rapat internal dan proyeksi anggaran memerlukan persetujuan Direktur Investasi.
             </p>
@@ -120,7 +123,7 @@ export default function ChatPage() {
         </div>
 
         {/* ---------------- transcript ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-main">
           <div
             style={{
               flexGrow: 1,
@@ -174,6 +177,7 @@ export default function ChatPage() {
                   key={a.id}
                   type="button"
                   onClick={() => ask(a.question)}
+                  className="tap"
                   style={{
                     textAlign: "left",
                     padding: "5px 8px",
@@ -246,7 +250,7 @@ export default function ChatPage() {
         </div>
 
         {/* ---------------- context ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-right">
           <Panel title="Dokumen Terambil" chip="5 DARI 6.188" style={{ height: 280 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {RETRIEVED_DOCS.map((d) => (
@@ -310,7 +314,7 @@ export default function ChatPage() {
             </div>
           </Panel>
 
-          <Panel title="Penggunaan Token" chip="SESI INI" style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Penggunaan Token" chip="SESI INI" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {TOKEN_USAGE.map((t) => (
                 <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -428,7 +432,17 @@ function Block({ block }: { block: AnswerBlock }) {
 
     case "callout":
       return (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 11px", background: "var(--bg-row-alt)", border: "1px solid var(--border-hairline)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            padding: "9px 11px",
+            background: "var(--bg-row-alt)",
+            border: "1px solid var(--border-hairline)",
+          }}
+        >
           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <span className="dim" style={{ fontSize: 9.5, letterSpacing: "0.06em", textTransform: "uppercase" }}>
               {block.label}

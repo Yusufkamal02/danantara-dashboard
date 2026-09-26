@@ -112,9 +112,12 @@ export default function HoldingsPage() {
       meta={`${PORTFOLIO_TOTALS.issuers} EMITEN · ${PORTFOLIO_TOTALS.sectors} SEKTOR · NILAI POSISI Rp ${PORTFOLIO_TOTALS.nav.toLocaleString("id-ID")} T`}
       sync="Diperbarui 16:04:22 WIB · sumber IDX + XBRL"
     >
-      <main className="main-grid" style={{ gridTemplateColumns: "250px minmax(0, 1fr) 300px" }}>
+      <main
+        className="main-grid"
+        style={{ "--col-left": "250px", "--col-right": "300px" } as React.CSSProperties}
+      >
         {/* ---------------- filters ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-left">
           <Panel title="Filter" chip={`${active.size} SEKTOR AKTIF`} style={{ height: 306 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6, height: 26, padding: "0 8px", background: "var(--bg-input)", border: "1px solid var(--border-hairline)" }}>
@@ -178,6 +181,7 @@ export default function HoldingsPage() {
                   key={v}
                   type="button"
                   onClick={() => setSavedView(v)}
+                  className="tap"
                   style={{
                     textAlign: "left",
                     padding: "5px 7px",
@@ -197,7 +201,7 @@ export default function HoldingsPage() {
             </div>
           </Panel>
 
-          <Panel title="Ringkasan Sektor" chip="% NILAI" style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Ringkasan Sektor" chip="% NILAI" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {SECTOR_BY_VALUE.map((s) => (
                 <BarRow key={s.name} label={s.name} value={`${num(s.pct)}%`} fraction={s.pct / maxSector} color={s.color} />
@@ -207,8 +211,8 @@ export default function HoldingsPage() {
         </div>
 
         {/* ---------------- table ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <div style={{ display: "flex", gap: 8, height: 76, flexShrink: 0 }}>
+        <div className="col col-main">
+          <div className="tile-row">
             <KpiTile label="EMITEN DITAMPILKAN" value={`${rows.length}`} delta={`dari ${HOLDINGS.length} baris`} foot={`${totals.sectors} sektor`} up={rows.length > 0} />
             <KpiTile label="NILAI POSISI" value={`Rp ${num(totals.value)} T`} delta={pct(totals.wChg)} foot="tertimbang nilai" up={totals.wChg >= 0} />
             <KpiTile label="RATA-RATA KEPEMILIKAN" value={`${num(totals.wOwned)}%`} delta={`bobot NAV ${num(totals.weight)}%`} foot="tertimbang nilai" up={totals.wOwned >= 50} />
@@ -218,9 +222,10 @@ export default function HoldingsPage() {
           <Panel
             title="Daftar Kepemilikan Danantara"
             chip={`URUT: ${COLUMNS.find((c) => c.key === sortKey)?.label} ${sortDir === "asc" ? "↑" : "↓"}`}
-            style={{ flexGrow: 1, minHeight: 0 }}
-            bodyStyle={{ padding: 8, overflow: "auto", display: "flex", flexDirection: "column" }}
+            className="panel-grow"
+            bodyStyle={{ padding: 8, overflow: "auto" }}
           >
+            <div className="tbl-wide" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
             <table className="tbl">
               <thead>
                 <tr>
@@ -326,11 +331,12 @@ export default function HoldingsPage() {
               </span>
               <span style={{ textAlign: "right", fontWeight: 600 }}>{num(totals.wYield)}%</span>
             </div>
+            </div>
           </Panel>
         </div>
 
         {/* ---------------- detail ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-right">
           <Panel title={`Detail Posisi — ${detail.ticker}`} chip="DIPILIH" style={{ height: 306 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div>
@@ -405,7 +411,7 @@ export default function HoldingsPage() {
             </div>
           </Panel>
 
-          <Panel title="Tindak Lanjut" chip={`${FOLLOW_UPS.length} TERBUKA`} style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
+          <Panel title="Tindak Lanjut" chip={`${FOLLOW_UPS.length} TERBUKA`} className="panel-grow" bodyStyle={{ padding: 8, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {FOLLOW_UPS.map((a) => (
                 <AlertRow key={a.body} level={a.level} label={a.label}>

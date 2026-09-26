@@ -20,10 +20,10 @@ export default function IkhtisarPage() {
     >
       <main
         className="main-grid"
-        style={{ gridTemplateColumns: "250px minmax(0, 1fr) 274px", alignItems: "stretch" }}
+        style={{ "--col-left": "250px", "--col-right": "274px" } as React.CSSProperties}
       >
         {/* ---------------- left ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-left">
           <Panel title="Filter Global" chip="REGION · SEKTOR" style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
             <Treemap
               rows={[
@@ -57,7 +57,7 @@ export default function IkhtisarPage() {
           <Panel
             title="Top Holdings"
             chip={`${PORTFOLIO_TOTALS.issuers} EMITEN`}
-            style={{ flexGrow: 1, minHeight: 0 }}
+            className="panel-grow"
             bodyStyle={{ padding: 8, overflow: "auto" }}
           >
             <table className="tbl">
@@ -93,8 +93,8 @@ export default function IkhtisarPage() {
         </div>
 
         {/* ---------------- centre ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <div style={{ display: "flex", gap: 8, height: 76, flexShrink: 0 }}>
+        <div className="col col-main">
+          <div className="tile-row">
             <KpiTile
               label={<Term k="Market Cap" label="MARKET CAP" />}
               value={`Rp ${PORTFOLIO_TOTALS.marketCap.toLocaleString("id-ID")} T`}
@@ -125,11 +125,11 @@ export default function IkhtisarPage() {
             />
           </div>
 
-          <div style={{ height: 420, flexShrink: 0, display: "flex" }}>
+          <div className="chart-slot">
             <PricePanel />
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexGrow: 1, minHeight: 200 }}>
+          <div className="split-row">
             <Panel
               title="Berita & Sentimen Langsung"
               chip="AUTO-REFRESH 30s"
@@ -196,7 +196,7 @@ export default function IkhtisarPage() {
         </div>
 
         {/* ---------------- right ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-right">
           <Panel title="Pendapatan per Segmen" chip="BBRI · 9M-26" style={{ height: 170 }} bodyStyle={{ padding: 8 }}>
             <Treemap
               labelSize={9}
@@ -225,7 +225,7 @@ export default function IkhtisarPage() {
           <Panel
             title="Peringatan Risiko"
             chip={`${RISK_ALERTS.length} AKTIF`}
-            style={{ flexGrow: 1, minHeight: 0 }}
+            className="panel-grow"
             bodyStyle={{ padding: 8, overflow: "auto" }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>

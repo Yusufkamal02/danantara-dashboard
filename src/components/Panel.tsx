@@ -8,6 +8,7 @@ export function Panel({
   children,
   bodyStyle,
   style,
+  className,
 }: {
   title: ReactNode;
   chip?: ReactNode;
@@ -16,9 +17,11 @@ export function Panel({
   children: ReactNode;
   bodyStyle?: CSSProperties;
   style?: CSSProperties;
+  /** Layout classes such as `panel-grow`, which media queries can target. */
+  className?: string;
 }) {
   return (
-    <section className="panel" style={style}>
+    <section className={className ? `panel ${className}` : "panel"} style={style}>
       <div className="panel-head">
         <span className="panel-title">{title}</span>
         <span style={{ flexGrow: 1 }} />

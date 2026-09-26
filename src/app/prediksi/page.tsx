@@ -39,9 +39,12 @@ export default function PrediksiPage() {
       command={`>BBRI IJ EQUITY FCST ${horizon}<GO>`}
       meta="MODEL ENSEMBLE · MAPE 6,8% · DILATIH 24 SEP 2026"
     >
-      <main className="main-grid" style={{ gridTemplateColumns: "268px minmax(0, 1fr) 312px" }}>
+      <main
+        className="main-grid"
+        style={{ "--col-left": "268px", "--col-right": "312px" } as React.CSSProperties}
+      >
         {/* ---------------- left ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-left">
           <Panel title="Model Prediksi" chip={`${MODELS.length} TERSEDIA`} style={{ height: 172 }} bodyStyle={{ padding: 8 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {MODELS.map((m) => {
@@ -93,7 +96,7 @@ export default function PrediksiPage() {
                     type="button"
                     onClick={() => setHorizon(h)}
                     aria-pressed={horizon === h}
-                    className="mono"
+                    className="mono tap"
                     style={{
                       flexGrow: 1,
                       height: 26,
@@ -149,7 +152,7 @@ export default function PrediksiPage() {
             </div>
           </Panel>
 
-          <Panel title="Catatan Metodologi" chip="PENTING" style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Catatan Metodologi" chip="PENTING" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.5 }}>
               {METHODOLOGY_NOTE}
             </p>
@@ -157,7 +160,7 @@ export default function PrediksiPage() {
         </div>
 
         {/* ---------------- centre ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-main">
           <Panel
             title="Proyeksi Harga BBRI — 14 Bulan ke Depan"
             chip={<Term k="Ensemble" label="ENSEMBLE LSTM + XGBOOST" />}
@@ -172,7 +175,7 @@ export default function PrediksiPage() {
           </Panel>
 
           <Panel title="Analisis Skenario — 12 Bulan" chip="PROBABILITAS TERTIMBANG" style={{ height: 182, flexShrink: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
-            <table className="tbl">
+            <table className="tbl tbl-mid">
               <thead>
                 <tr>
                   <th className="left">SKENARIO</th>
@@ -208,7 +211,7 @@ export default function PrediksiPage() {
             </table>
           </Panel>
 
-          <Panel title="Proyeksi Seluruh Portofolio" chip="8 DARI 42 EMITEN" style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
+          <Panel title="Proyeksi Seluruh Portofolio" chip="8 DARI 42 EMITEN" className="panel-grow" bodyStyle={{ padding: 8, overflow: "auto" }}>
             <table className="tbl">
               <thead>
                 <tr>
@@ -245,7 +248,7 @@ export default function PrediksiPage() {
         </div>
 
         {/* ---------------- right ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-right">
           <Panel title="Kontribusi Faktor" chip={<Term k="SHAP" label="SHAP TERNORMALISASI" />} style={{ height: 272 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {DRIVERS.map((d) => {
@@ -312,7 +315,7 @@ export default function PrediksiPage() {
             </div>
           </Panel>
 
-          <Panel title="Riwayat Akurasi Proyeksi" chip="24 BULAN" style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Riwayat Akurasi Proyeksi" chip="24 BULAN" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {ACCURACY_HISTORY.map((a) => (
                 <div key={a.ticker} style={{ display: "flex", alignItems: "baseline", gap: 8, paddingBottom: 7, borderBottom: "1px solid var(--border-row)" }}>

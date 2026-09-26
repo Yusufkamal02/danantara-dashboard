@@ -51,24 +51,7 @@ export function Term({
       </button>
 
       {open && (
-        <span
-          id={id}
-          role="tooltip"
-          style={{
-            position: "absolute",
-            zIndex: 50,
-            top: "calc(100% + 6px)",
-            left: 0,
-            width: 268,
-            padding: "9px 11px",
-            background: "#11161f",
-            border: "1px solid var(--border-hairline)",
-            boxShadow: "0 6px 20px rgba(0,0,0,.55)",
-            cursor: "default",
-            textAlign: "left",
-            whiteSpace: "normal",
-          }}
-        >
+        <span id={id} role="tooltip" className="term-tip">
           <span
             style={{
               display: "block",

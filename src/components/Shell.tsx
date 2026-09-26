@@ -19,19 +19,8 @@ function fmt(n: number): string {
 
 function AppBar({ subtitle }: { subtitle: string }) {
   return (
-    <header
-      style={{
-        flexShrink: 0,
-        height: 44,
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
-        padding: "0 12px",
-        background: "var(--bg-panel-header)",
-        borderBottom: "1px solid var(--border-hairline)",
-      }}
-    >
-      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <header className="appbar">
+      <span style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
           <path d="M10 1.5 18 6v8l-8 4.5L2 14V6z" fill="none" stroke="var(--accent-amber)" strokeWidth="1.4" />
           <path
@@ -41,41 +30,25 @@ function AppBar({ subtitle }: { subtitle: string }) {
             strokeWidth="1.1"
           />
         </svg>
-        <span
-          className="mono"
-          style={{ fontSize: 15, fontWeight: 700, letterSpacing: "0.14em" }}
-        >
+        <span className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: "0.14em" }}>
           DANANTARA
         </span>
       </span>
 
-      <span
-        className="dim"
-        style={{
-          fontSize: 12,
-          paddingLeft: 16,
-          borderLeft: "1px solid var(--border-hairline)",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {subtitle}
-      </span>
+      <span className="appbar-subtitle">{subtitle}</span>
 
       <span style={{ flexGrow: 1 }} />
 
-      <span style={{ display: "flex", gap: 14, alignItems: "baseline" }}>
+      <span className="appbar-tape">
         {TICKER_TAPE.map((q) => (
-          <span key={q.ticker} style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+          <span key={q.ticker} style={{ display: "flex", gap: 6, alignItems: "baseline", flexShrink: 0 }}>
             <span className="mono dim" style={{ fontSize: 11, fontWeight: 700 }}>
               {q.ticker === "IHSG" ? <Term k="IHSG" label="IHSG" /> : q.ticker}
             </span>
             <span className="mono" style={{ fontSize: 13, fontWeight: 600 }}>
               {fmt(q.price)}
             </span>
-            <span
-              className={`mono ${q.changePct >= 0 ? "pos" : "neg"}`}
-              style={{ fontSize: 11, fontWeight: 600 }}
-            >
+            <span className={`mono ${q.changePct >= 0 ? "pos" : "neg"}`} style={{ fontSize: 11, fontWeight: 600 }}>
               {q.changePct >= 0 ? "+" : ""}
               {q.changePct.toFixed(2).replace(".", ",")}%
             </span>
@@ -86,6 +59,7 @@ function AppBar({ subtitle }: { subtitle: string }) {
       <span
         className="mono"
         style={{
+          flexShrink: 0,
           fontSize: 9,
           fontWeight: 700,
           letterSpacing: "0.08em",
@@ -102,24 +76,17 @@ function AppBar({ subtitle }: { subtitle: string }) {
 
 function CommandBand({ command, meta }: { command: string; meta: string }) {
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        height: 22,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "0 12px",
-        background: "var(--band-command)",
-      }}
-    >
-      <span className="mono" style={{ fontSize: 11, fontWeight: 600, color: "var(--accent-amber)" }}>
+    <div className="cmdband">
+      <span
+        className="mono truncate"
+        style={{ fontSize: 11, fontWeight: 600, color: "var(--accent-amber)" }}
+      >
         {command}
       </span>
       <span style={{ flexGrow: 1 }} />
       <span
-        className="mono"
-        style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "#ffd9d9" }}
+        className="mono cmdband-meta"
+        style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "#ffd9d9", whiteSpace: "nowrap" }}
       >
         {meta}
       </span>
@@ -130,33 +97,19 @@ function CommandBand({ command, meta }: { command: string; meta: string }) {
 function TabStrip({ sync }: { sync: string }) {
   const pathname = usePathname();
   return (
-    <nav
-      style={{
-        flexShrink: 0,
-        height: 24,
-        display: "flex",
-        alignItems: "stretch",
-        background: "var(--bg-surface)",
-        borderBottom: "1px solid var(--border-hairline)",
-      }}
-    >
+    <nav className="tabstrip">
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         return (
           <Link
             key={tab.href}
             href={tab.href}
+            className="tab"
             aria-current={active ? "page" : undefined}
             style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "0 12px",
-              fontSize: 12,
               fontWeight: active ? 600 : 500,
-              textDecoration: "none",
               color: active ? "var(--text-on-accent)" : "var(--text-secondary)",
               background: active ? "var(--accent-amber)" : "transparent",
-              borderRight: "1px solid var(--border-hairline)",
             }}
           >
             {tab.label}
@@ -165,8 +118,8 @@ function TabStrip({ sync }: { sync: string }) {
       })}
       <span style={{ flexGrow: 1 }} />
       <span
-        className="mono dim"
-        style={{ display: "flex", alignItems: "center", padding: "0 12px", fontSize: 10 }}
+        className="mono dim tabstrip-sync"
+        style={{ display: "flex", alignItems: "center", padding: "0 12px", fontSize: 10, whiteSpace: "nowrap" }}
       >
         {sync}
       </span>

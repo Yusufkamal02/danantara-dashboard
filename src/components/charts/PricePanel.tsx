@@ -74,7 +74,7 @@ export function PricePanel() {
                 type="button"
                 onClick={() => setRange(r.key)}
                 aria-pressed={range === r.key}
-                className="mono"
+                className="mono tap"
                 style={{
                   padding: "1px 6px",
                   fontSize: 9.5,

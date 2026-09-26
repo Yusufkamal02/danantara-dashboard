@@ -29,9 +29,12 @@ export default function LaporanKeuanganPage() {
       command=">BBRI IJ EQUITY FA<GO>"
       meta="ROE 16,8% · ROA 2,74% · ROI 12,1% · PERIODE Q3-2026"
     >
-      <main className="main-grid" style={{ gridTemplateColumns: "250px minmax(0, 1fr) 330px" }}>
+      <main
+        className="main-grid"
+        style={{ "--col-left": "250px", "--col-right": "330px" } as React.CSSProperties}
+      >
         {/* ---------------- left ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-left">
           <Panel title="Emiten Portofolio" chip="URUT: NILAI" style={{ height: 402 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {EMITEN_LIST.map((e, i) => (
@@ -92,7 +95,7 @@ export default function LaporanKeuanganPage() {
             </div>
           </Panel>
 
-          <Panel title="Sumber Data" chip={`${DATA_SOURCES.length} TERHUBUNG`} style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Sumber Data" chip={`${DATA_SOURCES.length} TERHUBUNG`} className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {DATA_SOURCES.map((s) => (
                 <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -108,8 +111,8 @@ export default function LaporanKeuanganPage() {
         </div>
 
         {/* ---------------- centre ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <div style={{ display: "flex", gap: 8, height: 118, flexShrink: 0 }}>
+        <div className="col col-main">
+          <div className="tile-row" style={{ "--tile-h": "118px" } as React.CSSProperties}>
             {RATIOS.map((r) => {
               const color = r.up ? "var(--status-positive)" : "var(--status-negative)";
               return (
@@ -162,10 +165,10 @@ export default function LaporanKeuanganPage() {
           <Panel
             title="Laporan Laba Rugi — Perbandingan QoQ & YoY"
             chip="Rp miliar · belum diaudit"
-            style={{ flexGrow: 1, minHeight: 0 }}
+            className="panel-grow"
             bodyStyle={{ padding: 8, overflow: "auto" }}
           >
-            <table className="tbl">
+            <table className="tbl tbl-mid">
               <thead>
                 <tr>
                   <th className="left">POS LAPORAN</th>
@@ -209,7 +212,7 @@ export default function LaporanKeuanganPage() {
         </div>
 
         {/* ---------------- right ---------------- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+        <div className="col col-right">
           <Panel title={<Term k="DuPont" label="Dekomposisi DuPont" />} chip="Q3-2026" style={{ height: 172 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", alignItems: "stretch", gap: 6 }}>
@@ -305,7 +308,7 @@ export default function LaporanKeuanganPage() {
             </div>
           </Panel>
 
-          <Panel title="Ringkasan Otomatis" chip="DIBUAT AI" style={{ flexGrow: 1, minHeight: 0 }} bodyStyle={{ padding: 10, overflow: "auto" }}>
+          <Panel title="Ringkasan Otomatis" chip="DIBUAT AI" className="panel-grow" bodyStyle={{ padding: 10, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {AI_SUMMARY.map((p) => (
                 <p key={p.slice(0, 20)} style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5 }}>
