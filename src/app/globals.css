@@ -1,0 +1,258 @@
+/*
+ * Danantara Analytics Terminal — design tokens.
+ * Values match the approved mockup 1:1 (see docs/DESIGN.md).
+ * The terminal is dark-only by design; there is no light theme.
+ */
+:root {
+  --bg-base: #05070a;
+  --bg-surface: #0e1117;
+  --bg-panel-header: #161c26;
+  --bg-row-alt: #11161f;
+  --bg-input: #0a0d13;
+
+  --text-primary: #e6ecf5;
+  --text-secondary: #96a2b5;
+  --text-on-accent: #0b0d12;
+
+  --accent-amber: #f5a524;
+  --accent-orange: #ff7a1a;
+  --accent-blue: #57a9ff;
+  --accent-violet: #a78bfa;
+
+  --status-positive: #2ee87e;
+  --status-negative: #ff5c5c;
+
+  --border-hairline: #232b38;
+  --border-row: #12171f;
+
+  --chart-volume-up: #1e7a4a;
+  --chart-volume-down: #8a3030;
+  --band-command: #7d1d1d;
+
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+  --font-sans: var(--font-plex-condensed), system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-amber);
+}
+a:hover {
+  color: var(--accent-orange);
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 1px;
+}
+
+/* Screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- terminal shell ---------- */
+.screen {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+}
+
+.main-grid {
+  flex-grow: 1;
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+/* ---------- panel ---------- */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+
+.panel-head {
+  flex-shrink: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--bg-panel-header);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.panel-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  color: var(--accent-amber);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-body {
+  flex-grow: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.chip {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ---------- numeric / label type ---------- */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pos {
+  color: var(--status-positive);
+}
+.neg {
+  color: var(--status-negative);
+}
+.dim {
+  color: var(--text-secondary);
+}
+
+/* ---------- tables ---------- */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tbl th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 6px 5px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tbl th:first-child,
+.tbl th.left {
+  text-align: left;
+}
+
+.tbl td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border-row);
+  font-size: 10.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tbl td:first-child,
+.tbl td.left {
+  text-align: left;
+}
+
+.tbl tbody tr:nth-child(odd) {
+  background: var(--bg-row-alt);
+}
+
+.tbl tbody tr:hover {
+  background: #1b212c;
+}
+
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inside a table the cell must be allowed to shrink below its content width,
+   which only `max-width: 0` achieves. Outside one it would collapse the box. */
+.tbl .truncate {
+  max-width: 0;
+}
+
+/* Sortable column headers. */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.th-sort:hover {
+  color: var(--text-primary);
+}
+.th-sort[data-active="true"] {
+  color: var(--accent-amber);
+}
+
+/* Glossary affordance beside a sortable header. */
+.th-info {
+  border-bottom: 0 !important;
+  opacity: 0.6;
+}
+.th-info:hover {
+  opacity: 1;
+  color: var(--accent-amber);
+}
+
+/* ---------- glossary term ---------- */
+.term {
+  border-bottom: 1px dotted var(--text-secondary);
+  cursor: help;
+}
