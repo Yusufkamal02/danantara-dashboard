@@ -295,11 +295,11 @@ button {
 }
 
 .tbl-wide {
-  min-width: 840px;
+  min-width: calc(840px * var(--fs-scale));
 }
 
 .tbl-mid {
-  min-width: 620px;
+  min-width: calc(620px * var(--fs-scale));
 }
 
 .tbl th {
@@ -541,14 +541,6 @@ button {
     min-height: 340px;
   }
 
-  /* Wide tables scroll sideways; their track grows with the type. */
-  .tbl-wide {
-    min-width: calc(840px * var(--fs-scale));
-  }
-  .tbl-mid {
-    min-width: calc(620px * var(--fs-scale));
-  }
-
   /* Charts whose viewBox is far wider than the space they get would render
      9-unit labels at under 4px. Their text is in viewBox units, so it is set
      directly rather than scaled — except labels inside a fixed-size badge,
@@ -583,5 +575,22 @@ button {
     min-height: 32px;
     display: inline-flex;
     align-items: center;
+  }
+}
+
+/* Phone held sideways. Width alone cannot detect it — a landscape phone is
+   roughly as wide as a tablet (932px on a large iPhone) but only ~430px tall,
+   whereas a landscape tablet is 768px tall. Short plus coarse is the phone.
+   Only the type scale carries over from the portrait rules: at this width the
+   charts already get close to 1:1, so their label overrides must NOT apply,
+   and the three-into-one column stacking is handled by the width queries. */
+@media (pointer: coarse) and (max-height: 500px) {
+  :root {
+    --fs-scale: 1.18;
+    /* Vertical space is the scarce resource here. */
+    --chart-h: 260px;
+  }
+  .panel:not(.panel-chart) {
+    height: auto !important;
   }
 }

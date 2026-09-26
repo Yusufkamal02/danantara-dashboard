@@ -80,8 +80,14 @@ Karena teks membesar, panel di ponsel menyesuaikan tinggi ke isinya. Panel yang
 memuat grafik pengisi-kotak ditandai `panel-chart` dan mempertahankan tinggi
 pasti — tanpa itu grafiknya akan menciut jadi nol.
 
-Batas yang diketahui: ponsel dalam orientasi lanskap (lebar > 640px) tidak
-mendapat kenaikan skala ini.
+Ponsel dalam orientasi lanskap ikut mendapat skala ini, tetapi tidak bisa
+dideteksi lewat lebar: iPhone besar dalam lanskap ~932px, selebar tablet.
+Pembedanya adalah tinggi — ponsel lanskap ~430px, tablet lanskap 768px. Jadi
+pemicunya `(pointer: coarse) and (max-height: 500px)`.
+
+Blok itu sengaja hanya membawa skala teks dan tinggi grafik. Aturan label
+grafik **tidak** ikut: pada lebar lanskap, grafik sudah mendekati 1:1 sehingga
+label 9 unit tampil ~9px, dan memaksanya ke 16 unit akan membuatnya 16,8px.
 
 Perilaku lain di layar kecil:
 
