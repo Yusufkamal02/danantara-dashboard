@@ -61,6 +61,9 @@ export function PricePanel() {
 
   return (
     <Panel
+      // Without flex-grow the panel shrinks to the SVG's intrinsic width (the
+      // 856px viewBox) and leaves a gap once the column is wider than that.
+      style={{ flexGrow: 1, minWidth: 0 }}
       title="BBRI IJ EQUITY — Bank Rakyat Indonesia · Harian"
       extra={
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
