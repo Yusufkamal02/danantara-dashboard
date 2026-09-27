@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans_Condensed } from "next/font/google";
 import "./globals.css";
+import { ChatProvider } from "@/components/chat/ChatContext";
+import { ChatPopup } from "@/components/chat/ChatPopup";
 
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -30,7 +32,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`${plexMono.variable} ${plexCondensed.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* Mounted here, above the pages, so the conversation survives
+            navigation and the assistant floats over every screen. */}
+        <ChatProvider>
+          {children}
+          <ChatPopup />
+        </ChatProvider>
+      </body>
     </html>
   );
 }

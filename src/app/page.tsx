@@ -1,22 +1,103 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Panel, KpiTile, BarRow, AlertRow, Treemap } from "@/components/Panel";
 import { Term } from "@/components/Term";
 import { PricePanel } from "@/components/charts/PricePanel";
 import { YoYArea, Donut } from "@/components/charts/MiniCharts";
 import { YOY_GROWTH, HIMBARA_SHARE, REVENUE_SEGMENTS } from "@/data/market";
-import { SECTOR_ALLOCATION, HOLDINGS, PORTFOLIO_TOTALS } from "@/data/holdings";
+import {
+  SECTOR_ALLOCATION,
+  HOLDINGS,
+  PORTFOLIO_TOTALS,
+  FILTER_GROUPS,
+  IHSG_RETURN_YTD,
+  inGroup,
+} from "@/data/holdings";
 import { NEWS, CALENDAR, RISK_ALERTS } from "@/data/feed";
 
-const TOP_HOLDINGS = HOLDINGS.slice(0, 10);
+const num1 = (n: number) => n.toFixed(1).replace(".", ",");
+const signed1 = (n: number) => `${n >= 0 ? "+" : ""}${num1(n)}`;
+
+/** Treemap layout: the two big groups on top, the three smaller below. */
+const TREEMAP_ROWS = [
+  [
+    { ...FILTER_GROUPS[0], flex: 6 },
+    { ...FILTER_GROUPS[1], flex: 4 },
+  ],
+  FILTER_GROUPS.slice(2).map((g) => ({ ...g, flex: 1 })),
+].map((row) => row.map((g) => ({ name: g.key, pct: g.pct, color: g.color, flex: g.flex })));
 
 export default function IkhtisarPage() {
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const filtering = selected.length > 0;
+
+  const view = useMemo(() => {
+    const groups = FILTER_GROUPS.filter((g) => selected.includes(g.key));
+    const filtering = groups.length > 0;
+    const matches = (ticker: string) => {
+      const h = HOLDINGS.find((x) => x.ticker === ticker);
+      return !!h && groups.some((g) => inGroup(g, h));
+    };
+    const holdings = filtering ? HOLDINGS.filter((h) => matches(h.ticker)) : HOLDINGS;
+
+    // Stated portfolio totals when unfiltered; otherwise the selected groups
+    // weighted by market cap.
+    const cap = groups.reduce((s, g) => s + g.marketCap, 0);
+    const w = (pick: (g: (typeof groups)[number]) => number) => groups.reduce((s, g) => s + pick(g) * g.marketCap, 0) / cap;
+    const kpi = filtering
+      ? {
+          marketCap: cap,
+          marketCapMoM: w((g) => g.marketCapMoM),
+          returnYtd: w((g) => g.returnYtd),
+          dividendYield: w((g) => g.dividendYield),
+          dividendYieldYoY: w((g) => g.dividendYieldYoY),
+          weightedRoe: w((g) => g.weightedRoe),
+          weightedRoeQoQ: w((g) => g.weightedRoeQoQ),
+          issuers: groups.reduce((s, g) => s + g.issuers, 0),
+        }
+      : {
+          marketCap: PORTFOLIO_TOTALS.marketCap,
+          marketCapMoM: 2.4,
+          returnYtd: PORTFOLIO_TOTALS.returnYtd,
+          dividendYield: PORTFOLIO_TOTALS.dividendYield,
+          dividendYieldYoY: 0.3,
+          weightedRoe: PORTFOLIO_TOTALS.weightedRoe,
+          weightedRoeQoQ: -0.7,
+          issuers: PORTFOLIO_TOTALS.issuers,
+        };
+
+    return {
+      holdings,
+      top: holdings.slice(0, 10),
+      // The chart follows the largest position inside the filter.
+      lead: holdings[0] ?? HOLDINGS[0],
+      news: filtering ? NEWS.filter((n) => n.ticker === "MAKRO" || matches(n.ticker)) : NEWS,
+      calendar: filtering ? CALENDAR.filter((c) => matches(c.ticker)) : CALENDAR,
+      alerts: filtering ? RISK_ALERTS.filter((a) => a.tickers?.some(matches)) : RISK_ALERTS.slice(0, 4),
+      allocation: new Set(groups.map((g) => g.allocationName)),
+      kpi,
+    };
+  }, [selected]);
+
+  function toggle(key: string) {
+    setSelected((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      // Everything selected is the same as no filter.
+      return next.length === FILTER_GROUPS.length ? [] : next;
+    });
+  }
+
   const maxSector = SECTOR_ALLOCATION[0].pct;
+  const { kpi } = view;
+  const scope = filtering ? `${kpi.issuers} emiten · ${selected.join(" + ")}` : `agregat ${PORTFOLIO_TOTALS.issuers} emiten`;
 
   return (
     <Shell
       subtitle="Portfolio Analytics Terminal"
-      command="BBRI IJ EQUITY"
-      meta={`IKHTISAR PORTOFOLIO · ${PORTFOLIO_TOTALS.issuers} EMITEN · NAV Rp ${PORTFOLIO_TOTALS.nav.toLocaleString("id-ID")} T`}
+      meta={`IKHTISAR PORTOFOLIO · ${filtering ? `FILTER: ${selected.join(" + ").toUpperCase()} · ` : ""}${kpi.issuers} EMITEN · NAV Rp ${PORTFOLIO_TOTALS.nav.toLocaleString("id-ID")} T`}
     >
       <main
         className="main-grid"
@@ -24,39 +105,36 @@ export default function IkhtisarPage() {
       >
         {/* ---------------- left ---------------- */}
         <div className="col col-left">
-          <Panel title="Filter Global" chip="REGION · SEKTOR" className="panel-chart" style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
-            <Treemap
-              rows={[
-                [
-                  { name: "Himbara", pct: 44, color: "var(--accent-amber)", flex: 6 },
-                  { name: "Energi", pct: 21, color: "var(--accent-orange)", flex: 4 },
-                ],
-                [
-                  { name: "Telko", pct: 13, color: "var(--accent-blue)", flex: 1 },
-                  { name: "Tambang", pct: 12, color: "var(--accent-violet)", flex: 1 },
-                  { name: "Infra", pct: 10, color: "var(--status-positive)", flex: 1 },
-                ],
-              ]}
-            />
+          <Panel
+            title="Filter Global"
+            chip={filtering ? `${selected.length} DIPILIH` : "KLIK UNTUK FILTER"}
+            extra={
+              filtering && (
+                <button type="button" className="chat-pop-btn mono" onClick={() => setSelected([])} title="Tampilkan seluruh portofolio">
+                  SEMUA
+                </button>
+              )
+            }
+            className="panel-chart"
+            style={{ height: 150 }}
+            bodyStyle={{ padding: 8 }}
+          >
+            <Treemap rows={TREEMAP_ROWS} selected={selected} onToggle={toggle} />
           </Panel>
 
-          <Panel title="Alokasi Sektor" chip={<Term k="NAV" label="% NAV" />} style={{ height: 250 }}>
+          <Panel title="Alokasi Sektor" chip={<Term k="NAV" label="% NAV" />} style={{ height: 250 }} bodyStyle={{ overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {SECTOR_ALLOCATION.map((s) => (
-                <BarRow
-                  key={s.name}
-                  label={s.name}
-                  value={`${s.pct.toFixed(1).replace(".", ",")}%`}
-                  fraction={s.pct / maxSector}
-                  color={s.color}
-                />
+                <div key={s.name} style={{ opacity: filtering && !view.allocation.has(s.name) ? 0.35 : 1 }}>
+                  <BarRow label={s.name} value={`${s.pct.toFixed(1).replace(".", ",")}%`} fraction={s.pct / maxSector} color={s.color} />
+                </div>
               ))}
             </div>
           </Panel>
 
           <Panel
             title="Top Holdings"
-            chip={`${PORTFOLIO_TOTALS.issuers} EMITEN`}
+            chip={filtering ? `${view.top.length} DARI ${view.holdings.length} SAMPEL` : `${PORTFOLIO_TOTALS.issuers} EMITEN`}
             className="panel-grow"
             bodyStyle={{ padding: 8, overflow: "auto" }}
           >
@@ -72,7 +150,7 @@ export default function IkhtisarPage() {
                 </tr>
               </thead>
               <tbody>
-                {TOP_HOLDINGS.map((h) => (
+                {view.top.map((h) => (
                   <tr key={h.ticker}>
                     <td className="left" style={{ color: "var(--accent-amber)", fontWeight: 700, fontSize: "calc(11px * var(--fs-scale))" }}>
                       {h.ticker}
@@ -97,36 +175,42 @@ export default function IkhtisarPage() {
           <div className="tile-row">
             <KpiTile
               label={<Term k="Market Cap" label="MARKET CAP" />}
-              value={`Rp ${PORTFOLIO_TOTALS.marketCap.toLocaleString("id-ID")} T`}
-              delta="+2,4% MoM"
-              foot="agregat 42 emiten"
-              up
+              value={`Rp ${kpi.marketCap.toLocaleString("id-ID")} T`}
+              delta={`${signed1(kpi.marketCapMoM)}% MoM`}
+              foot={scope}
+              up={kpi.marketCapMoM >= 0}
             />
             <KpiTile
               label={<Term k="YTD" label="RETURN YTD" />}
-              value={`+${PORTFOLIO_TOTALS.returnYtd.toString().replace(".", ",")}%`}
-              delta="+6,1 pp vs IHSG"
+              value={`${signed1(kpi.returnYtd)}%`}
+              delta={`${signed1(kpi.returnYtd - IHSG_RETURN_YTD)} pp vs IHSG`}
               foot={<Term k="TWR" label="TWR, net dividen" />}
-              up
+              up={kpi.returnYtd >= IHSG_RETURN_YTD}
             />
             <KpiTile
               label={<Term k="Dividend Yield" label="DIVIDEND YIELD" />}
-              value={`${PORTFOLIO_TOTALS.dividendYield.toString().replace(".", ",")}%`}
-              delta="+0,3 pp YoY"
+              value={`${num1(kpi.dividendYield)}%`}
+              delta={`${signed1(kpi.dividendYieldYoY)} pp YoY`}
               foot="dividen 12 bulan / harga"
-              up
+              up={kpi.dividendYieldYoY >= 0}
             />
             <KpiTile
               label={<Term k="Weighted ROE" label="ROE TERTIMBANG" />}
-              value={`${PORTFOLIO_TOTALS.weightedRoe.toString().replace(".", ",")}%`}
-              delta="-0,7 pp QoQ"
-              foot="42 emiten portofolio"
-              up={false}
+              value={`${num1(kpi.weightedRoe)}%`}
+              delta={`${signed1(kpi.weightedRoeQoQ)} pp QoQ`}
+              foot={filtering ? scope : "42 emiten portofolio"}
+              up={kpi.weightedRoeQoQ >= 0}
             />
           </div>
 
           <div className="chart-slot">
-            <PricePanel />
+            <PricePanel
+              key={view.lead.ticker}
+              ticker={view.lead.ticker}
+              name={view.lead.name}
+              price={view.lead.price}
+              changePct={view.lead.changePct}
+            />
           </div>
 
           <div className="split-row">
@@ -137,7 +221,7 @@ export default function IkhtisarPage() {
               bodyStyle={{ padding: 8, overflow: "auto" }}
             >
               <div style={{ display: "flex", flexDirection: "column" }}>
-                {NEWS.map((n) => (
+                {view.news.map((n) => (
                   <div
                     key={n.time}
                     style={{
@@ -166,9 +250,10 @@ export default function IkhtisarPage() {
               </div>
             </Panel>
 
-            <Panel title="Kalender Korporasi" chip="OKT 2026" style={{ width: 300, flexShrink: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
+            <Panel title="Kalender Korporasi" chip={filtering ? `${view.calendar.length} AGENDA` : "OKT 2026"} style={{ width: 300, flexShrink: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                {CALENDAR.map((c) => (
+                {view.calendar.length === 0 && <EmptyNote>Tidak ada agenda untuk filter ini.</EmptyNote>}
+                {view.calendar.map((c) => (
                   <div
                     key={c.date + c.ticker}
                     style={{
@@ -215,7 +300,7 @@ export default function IkhtisarPage() {
           </Panel>
 
           <Panel title={<><Term k="Himbara" label="Pangsa Kredit Himbara" /></>} chip="Q3-2026" style={{ height: 210 }}>
-            <Donut slices={HIMBARA_SHARE} centre="Rp 7,1 rb T" caption="total kredit" />
+            <Donut slices={HIMBARA_SHARE} centre="Rp 7,1 rb T" caption="total kredit" unit=" T" />
           </Panel>
 
           <Panel title="Pertumbuhan Pendapatan YoY" chip={<Term k="YoY" label="AGREGAT" />} className="panel-chart" style={{ height: 150 }} bodyStyle={{ padding: 8 }}>
@@ -224,12 +309,13 @@ export default function IkhtisarPage() {
 
           <Panel
             title="Peringatan Risiko"
-            chip={`${RISK_ALERTS.length} AKTIF`}
+            chip={`${view.alerts.length} AKTIF`}
             className="panel-grow"
             bodyStyle={{ padding: 8, overflow: "auto" }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {RISK_ALERTS.map((a) => (
+              {view.alerts.length === 0 && <EmptyNote>Tidak ada peringatan aktif untuk filter ini.</EmptyNote>}
+              {view.alerts.map((a) => (
                 <AlertRow key={a.body} level={a.level} label={a.label}>
                   {a.body.includes("DER") ? (
                     <>
@@ -253,5 +339,13 @@ export default function IkhtisarPage() {
         </div>
       </main>
     </Shell>
+  );
+}
+
+function EmptyNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="dim" style={{ margin: 0, padding: "6px 0", fontSize: "calc(11px * var(--fs-scale))" }}>
+      {children}
+    </p>
   );
 }

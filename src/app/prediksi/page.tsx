@@ -16,7 +16,16 @@ import {
   ACCURACY_HISTORY,
   PORTFOLIO_FORECAST,
   METHODOLOGY_NOTE,
+  LAST_PRICE,
+  assumptionShift,
+  type Assumption,
 } from "@/data/forecast";
+
+const BASE_ASSUMPTIONS = Object.fromEntries(ASSUMPTIONS.map((a) => [a.id, a.value])) as Record<string, number>;
+
+const fmtAssumption = (a: Assumption, v: number) => `${v.toFixed(a.decimals).replace(".", ",")}${a.unit}`;
+const rupiah = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+const signedPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1).replace(".", ",")}%`;
 
 const TONE_COLOR = {
   neg: "var(--status-negative)",
@@ -27,17 +36,17 @@ const TONE_COLOR = {
 export default function PrediksiPage() {
   const [model, setModel] = useState(MODELS[0].name);
   const [horizon, setHorizon] = useState("12B");
-  const [assumptions, setAssumptions] = useState(
-    Object.fromEntries(ASSUMPTIONS.map((a) => [a.id, a.position])) as Record<string, number>,
-  );
+  const [assumptions, setAssumptions] = useState(BASE_ASSUMPTIONS);
+  const shift = assumptionShift(assumptions);
+  const adjusted = ASSUMPTIONS.some((a) => assumptions[a.id] !== a.value);
+  const baseTarget = SCENARIOS.find((s) => s.tone === "base")!.price * (1 + shift);
 
   const maxDriver = Math.max(...DRIVERS.map((d) => Math.abs(d.value)));
 
   return (
     <Shell
       subtitle="Mesin Prediksi & Skenario"
-      command={`>BBRI IJ EQUITY FCST ${horizon}<GO>`}
-      meta="MODEL ENSEMBLE · MAPE 6,8% · DILATIH 24 SEP 2026"
+      meta={`BBRI IJ EQUITY FCST ${horizon} · MODEL ENSEMBLE · MAPE 6,8% · DILATIH 24 SEP 2026`}
     >
       <main
         className="main-grid"
@@ -87,7 +96,19 @@ export default function PrediksiPage() {
             </div>
           </Panel>
 
-          <Panel title="Horizon & Asumsi" chip="SKENARIO DASAR" style={{ height: 228 }}>
+          <Panel
+            title="Horizon & Asumsi"
+            chip={adjusted ? `TARGET ${signedPct(shift * 100)}` : "SKENARIO DASAR"}
+            extra={
+              adjusted && (
+                <button type="button" className="chat-pop-btn mono" onClick={() => setAssumptions(BASE_ASSUMPTIONS)} title="Kembali ke asumsi skenario dasar">
+                  RESET
+                </button>
+              )
+            }
+            style={{ height: 228 }}
+            bodyStyle={{ overflow: "auto" }}
+          >
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", gap: 4 }}>
                 {HORIZONS.map((h) => (
@@ -119,16 +140,26 @@ export default function PrediksiPage() {
                     <label htmlFor={a.id} className="dim" style={{ flexGrow: 1, fontSize: "calc(10.5px * var(--fs-scale))" }}>
                       {a.label}
                     </label>
-                    <span className="mono" style={{ fontSize: "calc(10.5px * var(--fs-scale))", fontWeight: 600 }}>
-                      {a.value}
+                    <span
+                      className="mono"
+                      aria-live="polite"
+                      style={{
+                        fontSize: "calc(10.5px * var(--fs-scale))",
+                        fontWeight: 600,
+                        color: assumptions[a.id] !== a.value ? "var(--accent-amber)" : undefined,
+                      }}
+                    >
+                      {fmtAssumption(a, assumptions[a.id])}
                     </span>
                   </div>
                   <input
                     id={a.id}
                     type="range"
-                    min={0}
-                    max={100}
+                    min={a.min}
+                    max={a.max}
+                    step={a.step}
                     value={assumptions[a.id]}
+                    aria-valuetext={fmtAssumption(a, assumptions[a.id])}
                     onChange={(e) => setAssumptions((s) => ({ ...s, [a.id]: Number(e.target.value) }))}
                     style={{ width: "100%", accentColor: "var(--accent-amber)" }}
                   />
@@ -166,16 +197,16 @@ export default function PrediksiPage() {
             chip={<Term k="Ensemble" label="ENSEMBLE LSTM + XGBOOST" />}
             extra={
               <span className="mono" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700, color: "var(--accent-amber)" }}>
-                TARGET Rp 5.480
+                TARGET {rupiah(baseTarget)}
               </span>
             }
             className="panel-chart"
             style={{ height: 368, flexShrink: 0 }}
           >
-            <ForecastChart />
+            <ForecastChart shift={shift} />
           </Panel>
 
-          <Panel title="Analisis Skenario — 12 Bulan" chip="PROBABILITAS TERTIMBANG" style={{ height: 182, flexShrink: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
+          <Panel title="Analisis Skenario — 12 Bulan" chip={adjusted ? "TARGET MENGIKUTI ASUMSI" : "PROBABILITAS TERTIMBANG"} style={{ height: 182, flexShrink: 0 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
             <table className="tbl tbl-mid">
               <thead>
                 <tr>
@@ -196,10 +227,10 @@ export default function PrediksiPage() {
                     </td>
                     <td className="left">{s.probability}</td>
                     <td className="left" style={{ fontWeight: 600, fontSize: "calc(12px * var(--fs-scale))" }}>
-                      {s.target}
+                      {rupiah(s.price * (1 + shift))}
                     </td>
                     <td className="left" style={{ fontWeight: 600, color: TONE_COLOR[s.tone] }}>
-                      {s.ret}
+                      {signedPct(((s.price * (1 + shift)) / LAST_PRICE - 1) * 100)}
                     </td>
                     <td className="left">{s.roe}</td>
                     <td className="left">{s.growth}</td>

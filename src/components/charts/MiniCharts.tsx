@@ -155,8 +155,11 @@ export function RatioTrend({
 }) {
   const W = 880;
   const H = 212;
-  const lo = 0;
-  const hi = 20;
+  // 0–20% fits the healthy issuers; loss-makers and high-ROE names widen the
+  // axis in steps of 5 so gridlines stay on round numbers.
+  const all = series.flatMap((s) => s.values);
+  const lo = Math.min(0, Math.floor(Math.min(...all) / 5) * 5);
+  const hi = Math.max(20, Math.ceil(Math.max(...all) / 5) * 5);
   const plotW = W - 70;
   const [svgRef, hoverIndex, hoverHandlers] = useHoverIndex(quarters.length, W, plotW, 8);
 
@@ -183,7 +186,7 @@ export function RatioTrend({
             <g key={k}>
               <line x1={8} y1={gy} x2={W - 56} y2={gy} stroke="var(--border-hairline)" strokeWidth={0.6} />
               <text x={W - 50} y={gy + 3.4} className="mono" fontSize={9} fill="var(--text-secondary)">
-                {hi - (hi - lo) * (k / 4)}%
+                {fmt1(hi - (hi - lo) * (k / 4)).replace(",0", "")}%
               </text>
             </g>
           );
@@ -244,16 +247,24 @@ export function RatioTrend({
 
 /* ------------------------------------------------------------------ */
 
-/** Donut with centre total and an external legend. */
+/**
+ * Donut with centre total and an external legend. Hovering (or focusing) a
+ * slice or its legend row puts that slice's code, share and value in the
+ * centre and dims the rest.
+ */
 export function Donut({
   slices,
   centre,
   caption,
+  unit = "",
 }: {
-  slices: { name: string; pct: number; color: string }[];
+  slices: { name: string; pct: number; color: string; value?: number }[];
   centre: string;
   caption: string;
+  /** Formats a slice's `value` for the centre readout. */
+  unit?: string;
 }) {
+  const [active, setActive] = useState<number | null>(null);
   const r = 44;
   const c = 66;
   const circ = 2 * Math.PI * r;
@@ -267,11 +278,12 @@ export function Donut({
     len: (circ * s.pct) / 100,
     offset: slices.slice(0, i).reduce((sum, prev) => sum + (circ * prev.pct) / 100, 0),
   }));
+  const hot = active !== null ? slices[active] : null;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, height: "100%" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, height: "100%" }} onMouseLeave={() => setActive(null)}>
       <svg viewBox="0 0 132 132" width={132} height={132} role="img" aria-label={caption} style={{ flexShrink: 0 }}>
-        {arcs.map((s) => (
+        {arcs.map((s, i) => (
           <circle
             key={s.name}
             cx={c}
@@ -279,22 +291,63 @@ export function Donut({
             r={r}
             fill="none"
             stroke={s.color}
-            strokeWidth={17}
+            strokeWidth={active === i ? 22 : 17}
             strokeDasharray={`${s.len - 2.5} ${circ - s.len + 2.5}`}
             strokeDashoffset={-s.offset}
             transform={`rotate(-90 ${c} ${c})`}
-          />
+            opacity={active === null || active === i ? 1 : 0.3}
+            onMouseEnter={() => setActive(i)}
+            style={{ cursor: "pointer", transition: "stroke-width 120ms, opacity 120ms" }}
+          >
+            <title>{`${s.name} · ${String(s.pct)}%${s.value !== undefined ? ` · Rp ${s.value.toLocaleString("id-ID")}${unit}` : ""}`}</title>
+          </circle>
         ))}
-        <text x={c} y={c - 2} textAnchor="middle" className="mono" fontSize={12} fontWeight={700} fill="var(--text-primary)">
-          {centre}
-        </text>
-        <text x={c} y={c + 11} textAnchor="middle" fontSize={9} fill="var(--text-secondary)">
-          {caption}
-        </text>
+        {hot ? (
+          <>
+            <text x={c} y={c - 10} textAnchor="middle" className="mono" fontSize={13} fontWeight={700} fill={hot.color}>
+              {hot.name}
+            </text>
+            <text x={c} y={c + 5} textAnchor="middle" className="mono" fontSize={14} fontWeight={700} fill="var(--text-primary)">
+              {hot.pct}%
+            </text>
+            {hot.value !== undefined && (
+              <text x={c} y={c + 18} textAnchor="middle" className="mono" fontSize={8.5} fill="var(--text-secondary)">
+                Rp {hot.value.toLocaleString("id-ID")}
+                {unit}
+              </text>
+            )}
+          </>
+        ) : (
+          <>
+            <text x={c} y={c - 2} textAnchor="middle" className="mono" fontSize={12} fontWeight={700} fill="var(--text-primary)">
+              {centre}
+            </text>
+            <text x={c} y={c + 11} textAnchor="middle" fontSize={9} fill="var(--text-secondary)">
+              {caption}
+            </text>
+          </>
+        )}
       </svg>
-      <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 7, minWidth: 0 }}>
-        {slices.map((s) => (
-          <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+        {slices.map((s, i) => (
+          <button
+            key={s.name}
+            type="button"
+            onMouseEnter={() => setActive(i)}
+            onFocus={() => setActive(i)}
+            onBlur={() => setActive(null)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "2px 4px",
+              border: 0,
+              background: active === i ? "var(--bg-row-alt)" : "transparent",
+              opacity: active === null || active === i ? 1 : 0.5,
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
             <span style={{ width: 9, height: 9, background: s.color, flexShrink: 0 }} />
             <span className="mono" style={{ flexGrow: 1, fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600 }}>
               {s.name}
@@ -302,7 +355,7 @@ export function Donut({
             <span className="mono dim" style={{ fontSize: "calc(11px * var(--fs-scale))" }}>
               {s.pct}%
             </span>
-          </div>
+          </button>
         ))}
       </div>
     </div>

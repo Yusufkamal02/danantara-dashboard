@@ -208,6 +208,7 @@ button {
   min-height: 22px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   padding: 0 12px;
   background: var(--band-command);
@@ -383,12 +384,14 @@ button {
 }
 
 .term-tip {
-  position: absolute;
-  z-index: 50;
-  top: calc(100% + 6px);
-  left: 0;
+  /* Fixed and portalled to <body>; Term.tsx computes left/top so the box
+     stays inside the viewport, flipping around the cursor when needed. */
+  position: fixed;
+  z-index: 1000;
   width: 268px;
-  max-width: min(268px, calc(100vw - 32px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
   padding: 9px 11px;
   background: #11161f;
   border: 1px solid var(--border-hairline);
@@ -396,6 +399,7 @@ button {
   cursor: default;
   text-align: left;
   white-space: normal;
+  pointer-events: none;
 }
 
 .th-info {
@@ -506,8 +510,8 @@ button {
   .cmdband {
     padding: 3px 8px;
   }
-  .cmdband-meta {
-    display: none;
+  .cmdband {
+    justify-content: flex-start;
   }
   .tabstrip {
     height: 34px;
@@ -632,4 +636,156 @@ button {
     gap: 8px;
     padding: 6px 8px;
   }
+}
+
+/* ---------- floating chat assistant ---------- */
+.chat-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  background: var(--accent-amber);
+  color: var(--text-on-accent);
+  font-size: calc(11px * var(--fs-scale));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+.chat-fab:hover {
+  background: var(--accent-orange);
+}
+
+.chat-pop {
+  position: fixed;
+  right: 16px;
+  bottom: 60px;
+  z-index: 900;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  height: min(600px, calc(100vh - 90px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-amber);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+}
+
+.chat-pop-btn {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: calc(9.5px * var(--fs-scale));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  cursor: pointer;
+}
+.chat-pop-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-amber);
+}
+
+/* Suggestion chips scroll sideways in the narrow popup instead of eating
+   half its height. */
+.chat-chips-compact {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+/* Phone: the popup becomes a bottom sheet across the full width. */
+@media (max-width: 640px) {
+  .chat-fab {
+    right: 10px;
+    bottom: 10px;
+  }
+  .chat-pop {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    height: 86vh;
+    height: 86dvh;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  .chat-pop ~ .chat-fab {
+    display: none;
+  }
+}
+
+.history-item:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-row-alt) !important;
+}
+
+.treemap-cell {
+  transition: opacity 120ms;
+}
+.treemap-cell:hover {
+  opacity: 1 !important;
+  filter: brightness(1.12);
+}
+
+/* Moving-average legend pinned to the top-left of the price chart. */
+.ma-legend {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 4;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 3px 7px;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  border: 1px solid var(--border-hairline);
+  font-family: var(--font-mono);
+  font-size: calc(9.5px * var(--fs-scale));
+  color: var(--text-secondary);
+}
+
+/* ---------- Laporan Tahunan ---------- */
+/* Six function panels: two across in the main column, three on very wide
+   screens, one on phones. */
+.bidang-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+@media (min-width: 1680px) {
+  .bidang-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .bidang-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.indicator-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+.indicator-btn:hover {
+  border-color: var(--border-hairline);
+  background: var(--bg-row-alt);
 }

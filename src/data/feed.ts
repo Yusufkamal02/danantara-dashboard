@@ -38,13 +38,17 @@ export interface Alert {
   level: AlertLevel;
   label: string;
   body: string;
+  /** Issuers the alert concerns, for the overview's global filter. */
+  tickers?: string[];
 }
 
 export const RISK_ALERTS: Alert[] = [
-  { level: "kritis", label: "KRITIS", body: "SMGR — margin EBITDA turun 3,1 pp QoQ, di bawah kovenan internal" },
-  { level: "perhatian", label: "PERHATIAN", body: "PGAS — rasio DER 1,42x mendekati batas 1,50x" },
-  { level: "perhatian", label: "PERHATIAN", body: "BBTN — NPL gross naik ke 3,4% (+0,4 pp QoQ)" },
-  { level: "info", label: "INFO", body: "ANTM — konsensus analis direvisi naik oleh 4 sekuritas" },
+  { level: "kritis", label: "KRITIS", body: "SMGR — margin EBITDA turun 3,1 pp QoQ, di bawah kovenan internal", tickers: ["SMGR"] },
+  { level: "perhatian", label: "PERHATIAN", body: "PGAS — rasio DER 1,42x mendekati batas 1,50x", tickers: ["PGAS"] },
+  { level: "perhatian", label: "PERHATIAN", body: "BBTN — NPL gross naik ke 3,4% (+0,4 pp QoQ)", tickers: ["BBTN"] },
+  { level: "info", label: "INFO", body: "ANTM — konsensus analis direvisi naik oleh 4 sekuritas", tickers: ["ANTM"] },
+  { level: "info", label: "INFO", body: "TLKM — belanja modal 2026 dipangkas 6% untuk menjaga arus kas bebas", tickers: ["TLKM"] },
+  { level: "perhatian", label: "PERHATIAN", body: "BMRI — rasio LDR 94% mendekati batas atas internal 95%", tickers: ["BMRI"] },
 ];
 
 export const FOLLOW_UPS: Alert[] = [
@@ -62,25 +66,6 @@ export const KNOWLEDGE_SOURCES = [
   { label: "Riset Analis Eksternal", meta: "486 laporan", enabled: true },
   { label: "Data Makro BPS & BI", meta: "84 seri waktu", enabled: false },
   { label: "Notulen Rapat Internal", meta: "akses terbatas", enabled: false, locked: true },
-];
-
-export const CHAT_HISTORY = [
-  {
-    group: "Hari ini",
-    items: [
-      "Perbandingan ROE Himbara Q3-26",
-      "Emiten dengan CKPN naik >10% QoQ",
-      "Sensitivitas NAV terhadap BI rate",
-    ],
-  },
-  {
-    group: "Kemarin",
-    items: ["Ringkasan laporan Q3 TLKM", "Screener PER < 12 dan ROE > 15%"],
-  },
-  {
-    group: "Minggu ini",
-    items: ["Dampak harga nikel ke ANTM", "Proyeksi dividen 2027"],
-  },
 ];
 
 export const RETRIEVED_DOCS = [

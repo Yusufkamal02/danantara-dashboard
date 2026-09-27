@@ -63,6 +63,33 @@ terpisah, hanya ada lokal, belum pernah di-push.
   terverifikasi di akun `Yusufkamal02`.
 - Push lewat HTTPS memakai credential helper dari `gh auth setup-git`.
 
+## Sesi 27 Sep 2026 — revisi dan fitur baru
+
+**Fitur**
+- Chat AI jadi popup mengambang di setiap layar (tombol "TANYA AI" kanan
+  bawah). Percakapannya sama dengan layar `/chat` dan bertahan saat pindah
+  tab, karena store-nya di `layout.tsx`.
+- Ikhtisar: sel treemap "Filter Global" bisa diklik (multi-pilih). Filter
+  mengubah KPI, Top Holdings, grafik harga (ikut posisi terbesar), berita,
+  kalender, peringatan risiko, dan menyorot Alokasi Sektor.
+- Layar baru **Laporan Tahunan** (`/laporan-tahunan`): 6 bidang × 4
+  indikator, tahun buku FY2023–2025, perbandingan antar emiten (klik nilai
+  indikator), dan sorotan otomatis. Semua data contoh.
+
+**Perbaikan bug**
+- Tooltip glosarium tidak lagi keluar layar (portal + posisi fixed).
+- Teks perintah `>BBRI IJ EQUITY<GO>` di pita bawah app bar dihapus; pita
+  kini hanya berisi meta layar. Prop `command` di `Shell` sudah tidak ada.
+- Panel Alokasi Sektor (Ikhtisar) dan Filter (Holdings) bisa di-scroll.
+- Donut Pangsa Kredit Himbara: hover menampilkan kode, persentase, nilai.
+- Legenda MA 9 (oranye) dan MA 30 (biru) di grafik harga, nilai ikut kursor.
+- Tampilan Tersimpan (Holdings) menerapkan preset; mengubah filter manual
+  kembali ke "kustom".
+- Emiten Portofolio (Laporan Keuangan) bisa diklik; seluruh layar ikut.
+- Slider Horizon & Asumsi (Prediksi) menampilkan nilainya dan menggeser
+  target, tabel skenario, serta fan chart.
+- Riwayat Percakapan membuka percakapan tersimpan; "+ BARU" memulai sesi baru.
+
 ## Pelajaran dari masalah yang sudah terjadi
 
 - **Vercel Authentication bisa menyala lagi sendiri** — terjadi saat proyek
@@ -95,6 +122,11 @@ terpisah, hanya ada lokal, belum pernah di-push.
       sisa bernama `danantara-dashboard-poc` dari deploy CLI pertama yang
       tidak dipakai lagi — hapus atau rapikan supaya tidak membingungkan.
 - [ ] Opsional: domain kustom.
+
+**Perlu keputusan Anda (dari sesi 27 Sep)**
+- [ ] Validasi pilihan 24 indikator Laporan Tahunan per bidang, atau ganti
+      dengan daftar resmi yang dipakai Danantara.
+- [ ] Elastisitas slider Prediksi dan KPI per grup Filter Global masih karangan.
 
 **Pengembangan berikutnya**
 - [ ] Ganti data contoh dengan data nyata (IDX, XBRL) — cukup ubah isi

@@ -3,6 +3,9 @@
  * Figures are illustrative; none are taken from a filed financial statement.
  */
 
+import { HOLDINGS, type Holding } from "@/data/holdings";
+import { seeded, gaussian, seedOf } from "@/data/prng";
+
 export const QUARTERS = [
   "Q3-24",
   "Q4-24",
@@ -158,3 +161,322 @@ export const AI_SUMMARY = [
 ];
 
 export const AI_SUMMARY_SOURCES = ["XBRL Q3-26", "IDX API", "Konsensus 14 analis"];
+
+/* ------------------------------------------------------------------ */
+/* Per-issuer fundamentals                                              */
+/* ------------------------------------------------------------------ */
+
+
+export interface Fundamentals {
+  ticker: string;
+  name: string;
+  isBank: boolean;
+  ratios: RatioTile[];
+  trend: { key: string; color: string; values: number[] }[];
+  income: IncomeRow[];
+  dupont: { label: string; value: string; delta: string; up: boolean }[];
+  dupontRoe: string;
+  peers: { name: string; value: number; color: string }[];
+  peerLabel: string;
+  score: typeof FUNDAMENTAL_SCORE;
+  ownership: typeof OWNERSHIP_PANEL;
+  summary: string[];
+  summarySources: string[];
+  meta: string;
+}
+
+const d1 = (n: number) => n.toFixed(1).replace(".", ",");
+const d2 = (n: number) => n.toFixed(2).replace(".", ",");
+const signed = (n: number, f: (n: number) => string, unit: string) => `${n >= 0 ? "+" : ""}${f(n)}${unit}`;
+const rp = (n: number) => Math.round(n).toLocaleString("id-ID");
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+
+/** A ratio tile from a nine-quarter series; `lowerIsBetter` flips the colour. */
+function tile(key: string, series: number[], unit: "%" | "x", digits: 1 | 2, lowerIsBetter = false): RatioTile {
+  const f = digits === 1 ? d1 : d2;
+  const last = series[series.length - 1];
+  const qoq = last - series[series.length - 2];
+  const yoy = last - series[series.length - 5];
+  const u = unit === "%" ? " pp" : "x";
+  return {
+    key: key.toLowerCase(),
+    label: key,
+    value: `${f(last)}${unit}`,
+    qoq: `${signed(qoq, f, u)} QoQ`,
+    yoy: `${signed(yoy, f, u)} YoY`,
+    up: lowerIsBetter ? qoq <= 0 : qoq >= 0,
+    series,
+  };
+}
+
+/** Nine quarters ending exactly on `last`, walking backwards with drift. */
+function walk(rnd: () => number, last: number, vol: number, digits: number): number[] {
+  const drift = (rnd() - 0.4) * vol * 0.6;
+  const out = [last];
+  for (let i = 0; i < 8; i += 1) out.unshift(out[0] - drift + gaussian(rnd) * vol);
+  const k = 10 ** digits;
+  return out.map((v) => Math.round(v * k) / k);
+}
+
+/**
+ * Income-statement lines for one quarter, driven by a revenue figure and a
+ * few margins. Banks and non-banks report different line items.
+ */
+function quarterLines(isBank: boolean, revenue: number, m: { a: number; b: number; loss: boolean }): number[] {
+  if (isBank) {
+    const nii = revenue * 0.77;
+    const other = revenue - nii;
+    const opex = revenue * m.a;
+    const ppop = revenue - opex;
+    const ckpn = ppop * (m.loss ? 1.35 : m.b);
+    const pbt = ppop - ckpn;
+    const net = pbt * 0.79;
+    return [nii, other, revenue, -opex, ppop, -ckpn, pbt, net];
+  }
+  const cogs = revenue * (1 - m.a);
+  const gross = revenue - cogs;
+  const opex = gross * (m.loss ? 1.28 : m.b);
+  const op = gross - opex;
+  const fin = Math.abs(op) * 0.14 + revenue * 0.01;
+  const pbt = op - fin;
+  const net = pbt * (pbt > 0 ? 0.78 : 1);
+  return [revenue, -cogs, gross, -opex, op, -fin, pbt, net];
+}
+
+const BANK_LINES = [
+  "Pendapatan bunga bersih",
+  "Pendapatan operasional lain",
+  "Total pendapatan operasional",
+  "Beban operasional",
+  "PPOP",
+  "Beban CKPN",
+  "Laba sebelum pajak",
+  "Laba bersih",
+];
+const CORP_LINES = [
+  "Pendapatan usaha",
+  "Beban pokok pendapatan",
+  "Laba kotor",
+  "Beban usaha",
+  "Laba usaha",
+  "Beban keuangan",
+  "Laba sebelum pajak",
+  "Laba bersih",
+];
+const STRONG = new Set([2, 4, 6, 7]);
+
+function pctChange(now: number, before: number): string {
+  if (before === 0 || Math.sign(now) !== Math.sign(before)) return "—";
+  return signed(((Math.abs(now) - Math.abs(before)) / Math.abs(before)) * 100, d1, "%");
+}
+
+const shown = (n: number) => (n < 0 ? `(${rp(-n)})` : rp(n));
+
+function buildIncome(h: Holding, isBank: boolean, rnd: () => number): IncomeRow[] {
+  const marketCap = h.value / (h.owned / 100); // Rp T
+  const netAnnual = h.per !== null ? (marketCap * 1000) / h.per : -marketCap * 1000 * 0.03; // Rp miliar
+  const loss = netAnnual < 0;
+  // Margins are a trait of the issuer; quarters only wobble around them, or
+  // net profit would swing far more than revenue does.
+  const baseA = isBank ? 0.4 + rnd() * 0.12 : 0.24 + rnd() * 0.18;
+  const baseB = isBank ? 0.3 + rnd() * 0.1 : 0.42 + rnd() * 0.12;
+  const marg = () => ({ a: baseA + gaussian(rnd) * 0.006, b: baseB + gaussian(rnd) * 0.008, loss });
+
+  // Solve revenue so the latest quarter's net profit matches the annual figure.
+  const m3 = marg();
+  const probe = quarterLines(isBank, 1000, m3)[7];
+  const rev3 = Math.abs((netAnnual / 4 / probe) * 1000);
+
+  const gQoQ = 0.01 + gaussian(rnd) * 0.03;
+  const gYoY = 0.05 + gaussian(rnd) * 0.05;
+  const rev = {
+    q3: rev3,
+    q2: rev3 / (1 + gQoQ),
+    q1: rev3 / (1 + gQoQ) ** 2,
+    q3p: rev3 / (1 + gYoY),
+    q2p: rev3 / (1 + gQoQ) / (1 + gYoY),
+    q1p: rev3 / (1 + gQoQ) ** 2 / (1 + gYoY),
+  };
+  const L = {
+    q3: quarterLines(isBank, rev.q3, m3),
+    q2: quarterLines(isBank, rev.q2, marg()),
+    q1: quarterLines(isBank, rev.q1, marg()),
+    q3p: quarterLines(isBank, rev.q3p, marg()),
+    q2p: quarterLines(isBank, rev.q2p, marg()),
+    q1p: quarterLines(isBank, rev.q1p, marg()),
+  };
+
+  const labels = isBank ? BANK_LINES : CORP_LINES;
+  const rows: IncomeRow[] = labels.map((label, i) => {
+    const m9 = L.q3[i] + L.q2[i] + L.q1[i];
+    const m9p = L.q3p[i] + L.q2p[i] + L.q1p[i];
+    return {
+      label,
+      q3: shown(L.q3[i]),
+      q2: shown(L.q2[i]),
+      qoq: pctChange(L.q3[i], L.q2[i]),
+      q3Prev: shown(L.q3p[i]),
+      yoy: pctChange(L.q3[i], L.q3p[i]),
+      m9: shown(m9),
+      yoy9: pctChange(m9, m9p),
+      strong: STRONG.has(i),
+    };
+  });
+
+  // Earnings per share from the position: shares = market cap / price.
+  const shares = (marketCap * 1e12) / h.price;
+  const eps = (n: number) => (n * 1e9) / shares;
+  const epsQ3 = eps(L.q3[7]);
+  const epsQ2 = eps(L.q2[7]);
+  const epsP = eps(L.q3p[7]);
+  const epsM9 = eps(L.q3[7] + L.q2[7] + L.q1[7]);
+  const epsM9p = eps(L.q3p[7] + L.q2p[7] + L.q1p[7]);
+  const e = (n: number) => (n < 0 ? `(${d1(-n)})` : d1(n));
+  rows.push({
+    label: "Laba per saham (Rp)",
+    q3: e(epsQ3),
+    q2: e(epsQ2),
+    qoq: pctChange(epsQ3, epsQ2),
+    q3Prev: e(epsP),
+    yoy: pctChange(epsQ3, epsP),
+    m9: e(epsM9),
+    yoy9: pctChange(epsM9, epsM9p),
+  });
+  return rows;
+}
+
+/**
+ * Fundamentals for any holding. BBRI returns the hand-written figures the
+ * screen was designed around; every other issuer is derived from its row in
+ * the Holdings table (ROE, PER, price, stake) plus a ticker-seeded PRNG, so
+ * the numbers stay consistent with the rest of the dashboard and identical
+ * between server and client renders.
+ */
+export function buildFundamentals(ticker: string): Fundamentals {
+  const h = HOLDINGS.find((x) => x.ticker === ticker) ?? HOLDINGS[0];
+  const isBank = h.sector === "Perbankan";
+
+  if (h.ticker === "BBRI") {
+    return {
+      ticker: h.ticker,
+      name: h.name,
+      isBank,
+      ratios: RATIOS,
+      trend: TREND_SERIES,
+      income: INCOME_STATEMENT,
+      dupont: DUPONT,
+      dupontRoe: "16,8%",
+      peers: PEER_ROE,
+      peerLabel: "Himbara",
+      score: FUNDAMENTAL_SCORE,
+      ownership: OWNERSHIP_PANEL,
+      summary: AI_SUMMARY,
+      summarySources: AI_SUMMARY_SOURCES,
+      meta: "ROE 16,8% · ROA 2,74% · ROI 12,1% · PERIODE Q3-2026",
+    };
+  }
+
+  const rnd = seeded(seedOf(h.ticker));
+  const roe = walk(rnd, h.roe, 0.55, 1);
+  const leverage = isBank ? 6 + rnd() * 1.5 : 1.6 + rnd() * 1.2;
+  const roa = roe.map((v) => Math.round((v / leverage) * 100) / 100);
+  const roi = roe.map((v) => Math.round(v * 0.72 * 10) / 10);
+
+  const ratios: RatioTile[] = [tile("ROE", roe, "%", 1), tile("ROA", roa, "%", 2), tile("ROI", roi, "%", 1)];
+  if (isBank) {
+    ratios.push(tile("NIM", walk(rnd, 4 + rnd() * 2.5, 0.06, 2), "%", 2));
+    ratios.push(tile("CIR", walk(rnd, 40 + rnd() * 12, 0.5, 1), "%", 1, true));
+  } else {
+    const npm = h.roe < 0 ? -(3 + rnd() * 9) : 6 + rnd() * 16;
+    ratios.push(tile("NPM", walk(rnd, npm, 0.6, 1), "%", 1));
+    ratios.push(tile("DER", walk(rnd, h.roe < 0 ? 2.2 + rnd() * 2 : 0.4 + rnd() * 1.1, 0.04, 2), "x", 2, true));
+  }
+
+  const trend = [
+    { key: "ROE", color: "var(--accent-amber)", values: roe },
+    { key: "ROI", color: "var(--accent-blue)", values: roi },
+    { key: "ROA", color: "var(--status-positive)", values: roa },
+  ];
+
+  // DuPont: margin × turnover × multiplier reproduces the latest ROE.
+  const roeNow = roe[8];
+  const margin = isBank ? 22 + rnd() * 12 : Number(ratios[3].series[8]);
+  const multiplier = leverage;
+  const turnover = roeNow / 100 / (margin / 100) / multiplier;
+  const dm = gaussian(rnd) * 0.6;
+  const dt = gaussian(rnd) * 0.004;
+  const dx = gaussian(rnd) * 0.15;
+  const dupont = [
+    { label: "Margin laba bersih", value: `${d1(margin)}%`, delta: signed(dm, d1, " pp"), up: dm >= 0 },
+    { label: "Perputaran aset", value: `${turnover.toFixed(3).replace(".", ",")}x`, delta: `${dt >= 0 ? "+" : ""}${dt.toFixed(3).replace(".", ",")}x`, up: dt >= 0 },
+    { label: "Pengganda ekuitas", value: `${d2(multiplier)}x`, delta: signed(dx, d2, "x"), up: dx >= 0 },
+  ];
+
+  // Peers: the four largest positions in the same sector plus its median.
+  const sector = HOLDINGS.filter((x) => x.sector === h.sector);
+  const top = [...sector].sort((a, b) => b.value - a.value).slice(0, 4);
+  if (!top.some((x) => x.ticker === h.ticker)) top[top.length - 1] = h;
+  const peers = [
+    ...top.sort((a, b) => b.roe - a.roe).map((x) => ({
+      name: x.ticker,
+      value: x.roe,
+      color: x.ticker === h.ticker ? "var(--accent-amber)" : "var(--text-secondary)",
+    })),
+    ...(sector.length > 1
+      ? [{ name: `Median ${h.sector.toLowerCase()}`, value: Math.round(median(sector.map((x) => x.roe)) * 10) / 10, color: "var(--accent-blue)" }]
+      : []),
+  ];
+
+  const clamp = (v: number) => Math.max(8, Math.min(96, Math.round(v)));
+  const factors = [
+    { label: "Profitabilitas", value: clamp(45 + h.roe * 2.2) },
+    { label: "Kualitas aset", value: clamp(55 + gaussian(rnd) * 12) },
+    { label: "Likuiditas", value: clamp(62 + gaussian(rnd) * 12) },
+    { label: "Solvabilitas", value: clamp(h.roe < 0 ? 28 + rnd() * 15 : 55 + gaussian(rnd) * 12) },
+    { label: "Kualitas laba", value: clamp(50 + h.roe * 1.2 + gaussian(rnd) * 8) },
+  ].map((f) => ({ ...f, good: f.value >= 65 }));
+  const total = Math.round(factors.reduce((s, f) => s + f.value, 0) / factors.length);
+
+  const income = buildIncome(h, isBank, rnd);
+  const net = income[7];
+  const top1 = income[isBank ? 1 : 0];
+
+  const summary =
+    h.roe < 0
+      ? [
+          `${h.ticker} masih mencatat rugi bersih Rp ${net.q3.replace(/[()]/g, "")} miliar pada Q3-2026. Beban usaha melampaui laba kotor, sehingga ekuitas terus tergerus dan PER tidak bermakna.`,
+          `ROE ${d1(roeNow)}% dengan DER ${ratios[4].value} — solvabilitas menjadi faktor terlemah pada skor fundamental (${factors[3].value}/100).`,
+        ]
+      : [
+          `Laba bersih Q3-2026 ${net.yoy === "—" ? "berbalik arah" : `bergerak ${net.yoy} YoY`} ke Rp ${net.q3} miliar, dengan ${top1.label.toLowerCase()} ${top1.yoy} YoY. Secara kuartalan laba ${net.qoq.startsWith("-") ? "melemah" : "tumbuh"} ${net.qoq.replace(/^[+-]/, "")}.`,
+          `ROE ${ratios[0].qoq.startsWith("-") ? "turun" : "naik"} ${ratios[0].qoq.replace(/^[+-]/, "").replace(" QoQ", "")} QoQ ke ${ratios[0].value}; ${peers[0].name === h.ticker ? "tertinggi" : `di bawah ${peers[0].name}`} di antara sejawat ${h.sector.toLowerCase()}.`,
+        ];
+
+  return {
+    ticker: h.ticker,
+    name: h.name,
+    isBank,
+    ratios,
+    trend,
+    income,
+    dupont,
+    dupontRoe: `${d1(roeNow)}%`,
+    peers,
+    peerLabel: h.sector,
+    score: { total, factors },
+    ownership: {
+      ownedPct: h.owned,
+      stats: [
+        { label: "Nilai posisi", value: `Rp ${h.value.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T` },
+        { label: "Lembar saham", value: `${d1((h.value * 1000) / h.price)} mrd` },
+      ],
+    },
+    summary,
+    summarySources: [`XBRL ${h.ticker} Q3-26`, "IDX API", "Tabel Holdings"],
+    meta: `ROE ${ratios[0].value} · ROA ${ratios[1].value} · ROI ${ratios[2].value} · PERIODE Q3-2026`,
+  };
+}

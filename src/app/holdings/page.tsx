@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { Panel, KpiTile, BarRow, AlertRow } from "@/components/Panel";
 import { Term } from "@/components/Term";
@@ -16,6 +17,7 @@ import {
   PORTFOLIO_TOTALS,
   type Holding,
   type Sector,
+  type SavedView,
 } from "@/data/holdings";
 import { FOLLOW_UPS } from "@/data/feed";
 
@@ -48,7 +50,11 @@ export default function HoldingsPage() {
   const [sortKey, setSortKey] = useState<SortKey>("value");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState("BBRI");
-  const [savedView, setSavedView] = useState(SAVED_VIEWS[0]);
+  // The opening filters are hand-picked, not one of the presets, so no saved
+  // view starts highlighted. Touching any control drops back to "custom".
+  const [savedView, setSavedView] = useState<SavedView | null>(null);
+  const [tickers, setTickers] = useState<string[] | null>(null);
+  const [rule, setRule] = useState<SavedView["rule"] | null>(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,6 +62,8 @@ export default function HoldingsPage() {
       if (active.size > 0 && !active.has(h.sector)) return false;
       if (h.owned < minOwned) return false;
       if (q && !h.ticker.toLowerCase().includes(q) && !h.name.toLowerCase().includes(q)) return false;
+      if (tickers && !tickers.includes(h.ticker)) return false;
+      if (rule && !(rule.op === "lt" ? h[rule.key] < rule.value : h[rule.key] > rule.value)) return false;
       return true;
     });
 
@@ -68,7 +76,7 @@ export default function HoldingsPage() {
       const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [query, active, minOwned, sortKey, sortDir]);
+  }, [query, active, minOwned, sortKey, sortDir, tickers, rule]);
 
   /** Totals reflect the rows actually on screen, not the whole portfolio. */
   const totals = useMemo(() => {
@@ -86,7 +94,26 @@ export default function HoldingsPage() {
 
   const detail = HOLDINGS.find((h) => h.ticker === selected) ?? HOLDINGS[0];
 
+  function applyView(v: SavedView) {
+    setSavedView(v);
+    setQuery("");
+    setActive(new Set(v.sectors));
+    setMinOwned(v.minOwned);
+    setTickers(v.tickers ?? null);
+    setRule(v.rule ?? null);
+    setSortKey(v.sortKey);
+    setSortDir(v.sortDir);
+  }
+
+  /** Any manual change leaves the preset; its hidden constraints go with it. */
+  function leaveView() {
+    setSavedView(null);
+    setTickers(null);
+    setRule(null);
+  }
+
   function toggleSector(s: Sector) {
+    leaveView();
     setActive((prev) => {
       const next = new Set(prev);
       if (next.has(s)) next.delete(s);
@@ -96,6 +123,7 @@ export default function HoldingsPage() {
   }
 
   function sortBy(key: SortKey) {
+    // Re-sorting is a view of the same rows, so a preset stays applied.
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
@@ -108,8 +136,7 @@ export default function HoldingsPage() {
   return (
     <Shell
       subtitle="Manajemen Kepemilikan & Portofolio"
-      command=">DANANTARA HOLDINGS<GO>"
-      meta={`${PORTFOLIO_TOTALS.issuers} EMITEN · ${PORTFOLIO_TOTALS.sectors} SEKTOR · NILAI POSISI Rp ${PORTFOLIO_TOTALS.nav.toLocaleString("id-ID")} T`}
+      meta={`DANANTARA HOLDINGS · ${PORTFOLIO_TOTALS.issuers} EMITEN · ${PORTFOLIO_TOTALS.sectors} SEKTOR · NILAI POSISI Rp ${PORTFOLIO_TOTALS.nav.toLocaleString("id-ID")} T`}
       sync="Diperbarui 16:04:22 WIB · sumber IDX + XBRL"
     >
       <main
@@ -118,8 +145,25 @@ export default function HoldingsPage() {
       >
         {/* ---------------- filters ---------------- */}
         <div className="col col-left">
-          <Panel title="Filter" chip={`${active.size} SEKTOR AKTIF`} style={{ height: 306 }}>
+          <Panel
+            title="Filter"
+            chip={active.size ? `${active.size} SEKTOR AKTIF` : "SEMUA SEKTOR"}
+            style={{ height: 306 }}
+            bodyStyle={{ overflow: "auto" }}
+          >
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {savedView && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 7px", background: "var(--bg-row-alt)", borderLeft: "2px solid var(--accent-amber)" }}>
+                  <span style={{ flexGrow: 1, minWidth: 0, fontSize: "calc(10.5px * var(--fs-scale))" }}>
+                    Tampilan: <strong>{savedView.label}</strong>
+                    {tickers && <span className="dim"> · {tickers.join(", ")}</span>}
+                    {rule && <span className="dim"> · {rule.label}</span>}
+                  </span>
+                  <button type="button" className="chat-pop-btn mono" onClick={() => applyView(SAVED_VIEWS[0])} title="Kembali ke seluruh portofolio">
+                    RESET
+                  </button>
+                </div>
+              )}
               <label style={{ display: "flex", alignItems: "center", gap: 6, height: 26, padding: "0 8px", background: "var(--bg-input)", border: "1px solid var(--border-hairline)" }}>
                 <span className="sr-only">Cari emiten</span>
                 <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
@@ -129,7 +173,10 @@ export default function HoldingsPage() {
                 <input
                   type="search"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    leaveView();
+                    setQuery(e.target.value);
+                  }}
                   placeholder="Cari kode atau nama emiten…"
                   className="mono"
                   style={{ flexGrow: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: "calc(10.5px * var(--fs-scale))", color: "var(--text-primary)" }}
@@ -166,7 +213,10 @@ export default function HoldingsPage() {
                   min={0}
                   max={100}
                   value={minOwned}
-                  onChange={(e) => setMinOwned(Number(e.target.value))}
+                  onChange={(e) => {
+                    leaveView();
+                    setMinOwned(Number(e.target.value));
+                  }}
                   aria-label="Kepemilikan minimum"
                   style={{ flexGrow: 1, accentColor: "var(--accent-amber)" }}
                 />
@@ -174,30 +224,34 @@ export default function HoldingsPage() {
             </div>
           </Panel>
 
-          <Panel title="Tampilan Tersimpan" chip={`${SAVED_VIEWS.length}`} style={{ height: 150 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
+          <Panel title="Tampilan Tersimpan" chip={savedView ? "DITERAPKAN" : "KUSTOM"} style={{ height: 150 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              {SAVED_VIEWS.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setSavedView(v)}
-                  className="tap"
-                  style={{
-                    textAlign: "left",
-                    padding: "5px 7px",
-                    background: savedView === v ? "var(--bg-row-alt)" : "transparent",
-                    borderLeft: `2px solid ${savedView === v ? "var(--accent-amber)" : "transparent"}`,
-                    borderTop: 0,
-                    borderRight: 0,
-                    borderBottom: "1px solid var(--border-row)",
-                    fontSize: "calc(11px * var(--fs-scale))",
-                    color: savedView === v ? "var(--text-primary)" : "var(--text-secondary)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {v}
-                </button>
-              ))}
+              {SAVED_VIEWS.map((v) => {
+                const on = savedView?.id === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => applyView(v)}
+                    aria-pressed={on}
+                    className="tap history-item"
+                    style={{
+                      textAlign: "left",
+                      padding: "5px 7px",
+                      background: on ? "var(--bg-row-alt)" : "transparent",
+                      borderLeft: `2px solid ${on ? "var(--accent-amber)" : "transparent"}`,
+                      borderTop: 0,
+                      borderRight: 0,
+                      borderBottom: "1px solid var(--border-row)",
+                      fontSize: "calc(11px * var(--fs-scale))",
+                      color: on ? "var(--text-primary)" : "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {v.label}
+                  </button>
+                );
+              })}
             </div>
           </Panel>
 
@@ -378,8 +432,8 @@ export default function HoldingsPage() {
                 ))}
               </div>
 
-              <a
-                href="/laporan-keuangan"
+              <Link
+                href={`/laporan-keuangan?emiten=${detail.ticker}`}
                 className="mono"
                 style={{
                   alignSelf: "flex-start",
@@ -393,7 +447,7 @@ export default function HoldingsPage() {
                 }}
               >
                 BUKA LAPORAN KEUANGAN
-              </a>
+              </Link>
             </div>
           </Panel>
 

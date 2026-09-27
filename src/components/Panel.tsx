@@ -177,52 +177,89 @@ export function AlertRow({
   );
 }
 
-/** Proportional treemap laid out as two rows of fixed-share cells. */
+/**
+ * Proportional treemap laid out as rows of fixed-share cells. With `onToggle`
+ * the cells become toggle buttons — the overview's global filter — and cells
+ * outside a non-empty selection are dimmed.
+ */
 export function Treemap({
   rows,
   labelSize = 10,
+  selected,
+  onToggle,
 }: {
   rows: { name: string; pct: number; color: string; flex: number }[][];
   labelSize?: number;
+  selected?: string[];
+  onToggle?: (name: string) => void;
 }) {
+  const anySelected = (selected?.length ?? 0) > 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2, height: "100%" }}>
       {rows.map((row, i) => (
         <div key={i} style={{ display: "flex", gap: 2, flexGrow: i === 0 ? 1.35 : 1, minHeight: 0 }}>
-          {row.map((cell) => (
-            <div
-              key={cell.name}
-              style={{
-                flexGrow: cell.flex,
-                flexBasis: 0,
-                minWidth: 0,
-                padding: "5px 6px",
-                background: cell.color,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <span
+          {row.map((cell) => {
+            const on = selected?.includes(cell.name) ?? false;
+            const content = (
+              <>
+                <span
+                  style={{
+                    fontSize: `calc(${labelSize}px * var(--fs-scale))`,
+                    fontWeight: 600,
+                    color: "var(--text-on-accent)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {on ? "✓ " : ""}
+                  {cell.name}
+                </span>
+                <span
+                  className="mono"
+                  style={{ fontSize: `calc(${labelSize + 1}px * var(--fs-scale))`, fontWeight: 700, color: "var(--text-on-accent)" }}
+                >
+                  {cell.pct}%
+                </span>
+              </>
+            );
+            const style: CSSProperties = {
+              flexGrow: cell.flex,
+              flexBasis: 0,
+              minWidth: 0,
+              padding: "5px 6px",
+              background: cell.color,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              textAlign: "left",
+            };
+            return onToggle ? (
+              <button
+                key={cell.name}
+                type="button"
+                className="treemap-cell"
+                aria-pressed={on}
+                title={on ? `Hapus ${cell.name} dari filter` : `Filter ${cell.name}`}
+                onClick={() => onToggle(cell.name)}
                 style={{
-                  fontSize: labelSize,
-                  fontWeight: 600,
-                  color: "var(--text-on-accent)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  ...style,
+                  border: 0,
+                  cursor: "pointer",
+                  opacity: anySelected && !on ? 0.32 : 1,
+                  outline: on ? "2px solid var(--text-primary)" : undefined,
+                  outlineOffset: -2,
                 }}
               >
-                {cell.name}
-              </span>
-              <span
-                className="mono"
-                style={{ fontSize: labelSize + 1, fontWeight: 700, color: "var(--text-on-accent)" }}
-              >
-                {cell.pct}%
-              </span>
-            </div>
-          ))}
+                {content}
+              </button>
+            ) : (
+              <div key={cell.name} style={style}>
+                {content}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>

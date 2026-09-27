@@ -12,8 +12,9 @@ export interface GlossaryEntry {
   /** Expanded name, when the term is an abbreviation. */
   full?: string;
   body: string;
-  /** Knowledge-base section number. */
-  ref: string;
+  /** Knowledge-base section number. Absent for terms the PoC added that the
+   *  knowledge base does not cover yet — the tooltip says so. */
+  ref?: string;
   /** Flagged where production must still pin down a formula. */
   undefinedFormula?: boolean;
 }
@@ -221,6 +222,37 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   "T+1": {
     body: "Data tersedia satu hari kerja setelah periode terjadi — lazim untuk laporan keuangan terstruktur.",
     ref: "§27",
+  },
+
+  // ---- Added by the PoC; not yet covered by the knowledge base. ----
+  MA: {
+    full: "Moving Average",
+    body: "Rata-rata harga penutupan N hari terakhir. MA 9 (garis oranye) membaca tren jangka pendek, MA 30 (garis biru) tren jangka menengah; MA 9 memotong ke atas MA 30 sering dibaca sebagai penguatan momentum.",
+  },
+  NPM: {
+    full: "Net Profit Margin",
+    body: "Laba bersih dibagi pendapatan. Menunjukkan berapa rupiah laba yang tersisa dari setiap rupiah penjualan.",
+  },
+  "Laporan Tahunan": {
+    body: "Annual report emiten. Selain laporan keuangan teraudit, memuat kinerja per bidang — operasional, teknologi, SDM, manajemen risiko, pemasaran, dan keberlanjutan — yang di layar ini disarikan menjadi indikator.",
+  },
+  Turnover: {
+    full: "Employee turnover",
+    body: "Persentase karyawan yang keluar dalam setahun terhadap rata-rata jumlah karyawan. Makin rendah, makin stabil tenaga kerja.",
+  },
+  "Profil Risiko": {
+    body: "Peringkat komposit hasil penilaian sendiri atas risiko inheren dan kualitas penerapan manajemen risiko, skala 1 (rendah) sampai 5 (tinggi).",
+  },
+  NPS: {
+    full: "Net Promoter Score",
+    body: "Persentase pelanggan promotor dikurangi persentase pelanggan kritikus, rentang -100 sampai +100. Mengukur loyalitas dan kesediaan merekomendasikan.",
+  },
+  GRK: {
+    full: "Gas Rumah Kaca",
+    body: "Emisi cakupan 1 (langsung dari operasi) dan cakupan 2 (dari listrik yang dibeli), dalam ribu ton setara CO₂.",
+  },
+  "Risiko ESG": {
+    body: "Skor risiko lingkungan, sosial, dan tata kelola dari pemeringkat pihak ketiga. Makin rendah skornya, makin kecil risiko ESG yang belum dikelola.",
   },
 };
 

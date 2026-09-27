@@ -9,6 +9,7 @@ const TABS = [
   { href: "/", label: "Ikhtisar" },
   { href: "/holdings", label: "Holdings" },
   { href: "/laporan-keuangan", label: "Laporan Keuangan" },
+  { href: "/laporan-tahunan", label: "Laporan Tahunan" },
   { href: "/prediksi", label: "Prediksi" },
   { href: "/chat", label: "Chat AI" },
 ];
@@ -74,19 +75,13 @@ function AppBar({ subtitle }: { subtitle: string }) {
   );
 }
 
-function CommandBand({ command, meta }: { command: string; meta: string }) {
+/** Context strip under the app bar: what the current screen is showing. */
+function CommandBand({ meta }: { meta: string }) {
   return (
     <div className="cmdband">
       <span
-        className="mono truncate"
-        style={{ fontSize: "calc(11px * var(--fs-scale))", fontWeight: 600, color: "var(--accent-amber)" }}
-      >
-        {command}
-      </span>
-      <span style={{ flexGrow: 1 }} />
-      <span
-        className="mono cmdband-meta"
-        style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em", color: "#ffd9d9", whiteSpace: "nowrap" }}
+        className="mono cmdband-meta truncate"
+        style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em", color: "#ffd9d9" }}
       >
         {meta}
       </span>
@@ -130,13 +125,11 @@ function TabStrip({ sync }: { sync: string }) {
 /** Page frame shared by all five screens. */
 export function Shell({
   subtitle,
-  command,
   meta,
   sync = "Terakhir sinkron 16:04:22 WIB",
   children,
 }: {
   subtitle: string;
-  command: string;
   meta: string;
   sync?: string;
   children: React.ReactNode;
@@ -145,7 +138,7 @@ export function Shell({
     <div className="screen">
       <MockupNotice />
       <AppBar subtitle={subtitle} />
-      <CommandBand command={command} meta={meta} />
+      <CommandBand meta={meta} />
       <TabStrip sync={sync} />
       {children}
     </div>

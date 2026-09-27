@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/Panel";
 import { Term } from "@/components/Term";
 import { buildSeries, sma, RANGES, type RangeKey, type Candle } from "@/data/market";
+import { seedOf } from "@/data/prng";
 
 const W = 856;
 const H = 380;
@@ -19,13 +20,31 @@ const MACD_BOT = 376;
 
 const id = (n: number) => n.toLocaleString("id-ID");
 
-export function PricePanel() {
+/** The two moving averages drawn over the candles, and their legend. */
+const MAS = [
+  { window: 9, color: "var(--accent-amber)", label: "MA 9" },
+  { window: 30, color: "var(--accent-blue)", label: "MA 30" },
+];
+
+export function PricePanel({
+  ticker = "BBRI",
+  name = "Bank Rakyat Indonesia",
+  price = 4820,
+  changePct = 1.26,
+}: {
+  ticker?: string;
+  name?: string;
+  price?: number;
+  changePct?: number;
+}) {
   const [range, setRange] = useState<RangeKey>("1T");
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const points = RANGES.find((r) => r.key === range)!.points;
-  const candles = useMemo(() => buildSeries(points), [points]);
+  // BBRI keeps the seed the screen was designed with; others get their own walk.
+  const seed = ticker === "BBRI" ? 7 : seedOf(ticker);
+  const candles = useMemo(() => buildSeries(points, seed, price), [points, seed, price]);
 
   const step = PLOT_W / candles.length;
   const bodyW = step * 0.62;
@@ -40,8 +59,7 @@ export function PricePanel() {
   const cx = (i: number) => i * step + step / 2;
 
   const closes = candles.map((c) => c.close);
-  const ma9 = useMemo(() => sma(closes, 9), [closes]);
-  const ma30 = useMemo(() => sma(closes, 30), [closes]);
+  const maLines = useMemo(() => MAS.map((m) => ({ ...m, data: sma(closes, m.window) })), [closes]);
 
   const volMax = Math.max(...candles.map((c) => c.volume));
   const macdMax = Math.max(...candles.map((c) => Math.abs(c.macd)));
@@ -65,7 +83,7 @@ export function PricePanel() {
       // 856px viewBox) and leaves a gap once the column is wider than that.
       className="panel-chart"
       style={{ flexGrow: 1, minWidth: 0 }}
-      title="BBRI IJ EQUITY — Bank Rakyat Indonesia · Harian"
+      title={`${ticker} IJ EQUITY — ${name} · Harian`}
       extra={
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ display: "flex", gap: 2 }}>
@@ -90,8 +108,10 @@ export function PricePanel() {
               </button>
             ))}
           </span>
-          <span className="mono pos" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700 }}>
-            {id(last.close)} +60 (+1,26%)
+          <span className={`mono ${changePct >= 0 ? "pos" : "neg"}`} style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700 }}>
+            {id(last.close)} {changePct >= 0 ? "+" : "-"}
+            {id(Math.abs(Math.round((price * changePct) / (100 + changePct))))} ({changePct >= 0 ? "+" : ""}
+            {changePct.toFixed(2).replace(".", ",")}%)
           </span>
         </span>
       }
@@ -105,7 +125,7 @@ export function PricePanel() {
         height="100%"
         preserveAspectRatio="none"
         role="img"
-        aria-label="Grafik harga harian BBRI dengan volume, RSI dan MACD. Arahkan kursor untuk melihat nilai OHLC."
+        aria-label={`Grafik harga harian ${ticker} dengan rata-rata bergerak 9 dan 30 hari, volume, RSI dan MACD. Arahkan kursor untuk melihat nilai OHLC.`}
         onMouseMove={handleMove}
         onMouseLeave={() => setHover(null)}
         style={{ display: "block", cursor: "crosshair" }}
@@ -145,10 +165,7 @@ export function PricePanel() {
         })}
 
         {/* moving averages */}
-        {[
-          { data: ma9, color: "var(--accent-amber)" },
-          { data: ma30, color: "var(--accent-blue)" },
-        ].map((line, k) => (
+        {maLines.map((line, k) => (
           <polyline
             key={k}
             fill="none"
@@ -262,14 +279,30 @@ export function PricePanel() {
         )}
       </svg>
 
+      {/* Legend for the two moving-average lines; values follow the cursor. */}
+      <div className="ma-legend">
+        {maLines.map((m) => {
+          const v = m.data[hover ?? candles.length - 1];
+          return (
+            <span key={m.label} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <span aria-hidden="true" style={{ width: 14, height: 2, background: m.color }} />
+              <Term k="MA" label={m.label} />
+              <span className="mono" style={{ color: m.color, fontWeight: 600 }}>
+                {v === null ? "—" : id(Math.round(v))}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+
       {active && hover !== null && (
-        <Readout candle={active} left={(cx(hover) / W) * 100} />
+        <Readout ticker={ticker} candle={active} left={(cx(hover) / W) * 100} />
       )}
     </Panel>
   );
 }
 
-function Readout({ candle, left }: { candle: Candle; left: number }) {
+function Readout({ ticker, candle, left }: { ticker: string; candle: Candle; left: number }) {
   const flip = left > 60;
   const up = candle.close >= candle.open;
   const rows: [string, string, string?][] = [
@@ -286,7 +319,7 @@ function Readout({ candle, left }: { candle: Candle; left: number }) {
     <div
       style={{
         position: "absolute",
-        top: 10,
+        top: 34,
         [flip ? "right" : "left"]: `${flip ? 100 - left + 1 : left + 1}%`,
         minWidth: 132,
         padding: "7px 9px",
@@ -301,7 +334,7 @@ function Readout({ candle, left }: { candle: Candle; left: number }) {
         className="mono"
         style={{ fontSize: "calc(9px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)", marginBottom: 4 }}
       >
-        BBRI · {candle.label}
+        {ticker} · {candle.label}
       </div>
       {rows.map(([k, v, tone]) => (
         <div key={k} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>

@@ -4,6 +4,8 @@
  * model was trained to produce them.
  */
 
+import { seeded, gaussian } from "@/data/prng";
+
 export interface ForecastPoint {
   label: string;
   /** Realised close, present only on the historical leg. */
@@ -18,28 +20,14 @@ export interface ForecastPoint {
   hi80?: number;
 }
 
-function seeded(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function gaussian(rnd: () => number): number {
-  const u = Math.max(rnd(), Number.EPSILON);
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd());
-}
-
 const AXIS = ["Okt-24", "Apr-25", "Okt-25", "Apr-26", "Okt-26", "Apr-27", "Okt-27"];
 
 /**
  * 30 realised months then 14 projected, with widening intervals. The two legs
- * share the point where history ends so the lines meet cleanly.
+ * share the point where history ends so the lines meet cleanly. `shift` is
+ * the relative target change from the assumption sliders.
  */
-export function buildForecast(): { points: ForecastPoint[]; splitIndex: number; target: number } {
+export function buildForecast(shift = 0): { points: ForecastPoint[]; splitIndex: number; target: number } {
   const rnd = seeded(11);
   const history = 30;
   const horizon = 14;
@@ -65,7 +53,8 @@ export function buildForecast(): { points: ForecastPoint[]; splitIndex: number; 
   points[points.length - 1].hi80 = last;
 
   for (let i = 0; i < horizon; i += 1) {
-    const base = Math.round(last * Math.pow(1.009, i + 1));
+    // Assumption changes phase in over the horizon rather than jumping at once.
+    const base = Math.round(last * Math.pow(1.009, i + 1) * (1 + (shift * (i + 1)) / horizon));
     const t = Math.pow((i + 1) / horizon, 0.62);
     points.push({
       label: monthLabel(history + i, history + horizon),
@@ -94,17 +83,42 @@ export const MODELS = [
 
 export const HORIZONS = ["3B", "6B", "12B", "24B"];
 
-export const ASSUMPTIONS = [
-  { id: "bi-rate", label: "Asumsi BI rate", value: "4,50%", position: 45 },
-  { id: "kredit", label: "Pertumbuhan kredit", value: "9,0%", position: 60 },
-  { id: "npl", label: "NPL gross", value: "2,8%", position: 32 },
+export interface Assumption {
+  id: string;
+  label: string;
+  unit: string;
+  min: number;
+  max: number;
+  step: number;
+  /** Base-case value; the slider starts here. */
+  value: number;
+  decimals: number;
+  /**
+   * Change in the 12-month price target, in percent, per one unit above the
+   * base value. INVENTED FOR THE PoC — no model was fitted to produce these.
+   */
+  elasticity: number;
+}
+
+export const ASSUMPTIONS: Assumption[] = [
+  { id: "bi-rate", label: "Asumsi BI rate", unit: "%", min: 3, max: 7, step: 0.25, value: 4.5, decimals: 2, elasticity: -6 },
+  { id: "kredit", label: "Pertumbuhan kredit", unit: "%", min: 0, max: 16, step: 0.5, value: 9, decimals: 1, elasticity: 1.5 },
+  { id: "npl", label: "NPL gross", unit: "%", min: 1, max: 6, step: 0.1, value: 2.8, decimals: 1, elasticity: -4 },
 ];
+
+/** Relative shift of the price target implied by the slider values, e.g. -0.03. */
+export function assumptionShift(values: Record<string, number>): number {
+  return ASSUMPTIONS.reduce((sum, a) => sum + ((values[a.id] ?? a.value) - a.value) * a.elasticity, 0) / 100;
+}
+
+/** Last close the scenario returns are measured against. */
+export const LAST_PRICE = 4820;
 
 export interface Scenario {
   name: string;
   probability: string;
-  target: string;
-  ret: string;
+  /** 12-month target price at base-case assumptions. */
+  price: number;
   roe: string;
   growth: string;
   tone: "neg" | "base" | "pos";
@@ -115,8 +129,7 @@ export const SCENARIOS: Scenario[] = [
   {
     name: "Bearish",
     probability: "18%",
-    target: "Rp 4.150",
-    ret: "-13,9%",
+    price: 4150,
     roe: "11,2%",
     growth: "+2,1%",
     tone: "neg",
@@ -125,8 +138,7 @@ export const SCENARIOS: Scenario[] = [
   {
     name: "Dasar",
     probability: "57%",
-    target: "Rp 5.480",
-    ret: "+13,7%",
+    price: 5480,
     roe: "16,4%",
     growth: "+7,8%",
     tone: "base",
@@ -135,8 +147,7 @@ export const SCENARIOS: Scenario[] = [
   {
     name: "Bullish",
     probability: "25%",
-    target: "Rp 6.320",
-    ret: "+31,1%",
+    price: 6320,
     roe: "19,1%",
     growth: "+12,4%",
     tone: "pos",

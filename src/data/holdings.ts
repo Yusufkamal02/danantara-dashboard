@@ -23,6 +23,17 @@ export const SECTORS: Sector[] = [
   "Kesehatan",
 ];
 
+/** Compact sector labels for narrow lists. */
+export const SECTOR_SHORT: Record<Sector, string> = {
+  Perbankan: "Bank",
+  Energi: "Energi",
+  Infrastruktur: "Infra",
+  Telekomunikasi: "Telko",
+  Pertambangan: "Tambang",
+  "Industri dasar": "Ind. dasar",
+  Kesehatan: "Kesehatan",
+};
+
 export interface Holding {
   ticker: string;
   name: string;
@@ -118,12 +129,50 @@ export const SECTOR_COUNTS: Record<Sector, number> = {
   Kesehatan: 2,
 };
 
-export const SAVED_VIEWS = [
-  "Seluruh portofolio",
-  "Himbara saja",
-  "ROE di bawah 10%",
-  "Bobot NAV > 5%",
-  "Yield dividen tertinggi",
+/** The four state-owned banks. BRIS is a state-linked bank but not Himbara. */
+export const HIMBARA = ["BBRI", "BMRI", "BBNI", "BBTN"];
+
+export type ViewSortKey = "value" | "roe" | "weight" | "dividendYield";
+
+/**
+ * Saved table presets on the Holdings screen. Applying one replaces the
+ * search, sector, minimum-stake and sort controls; `rule` adds a threshold
+ * that the manual controls cannot express.
+ */
+export interface SavedView {
+  id: string;
+  label: string;
+  /** Empty means every sector. */
+  sectors: Sector[];
+  minOwned: number;
+  tickers?: string[];
+  rule?: { key: "roe" | "weight"; op: "lt" | "gt"; value: number; label: string };
+  sortKey: ViewSortKey;
+  sortDir: "asc" | "desc";
+}
+
+export const SAVED_VIEWS: SavedView[] = [
+  { id: "all", label: "Seluruh portofolio", sectors: [], minOwned: 0, sortKey: "value", sortDir: "desc" },
+  { id: "himbara", label: "Himbara saja", sectors: ["Perbankan"], minOwned: 0, tickers: HIMBARA, sortKey: "value", sortDir: "desc" },
+  {
+    id: "roe-low",
+    label: "ROE di bawah 10%",
+    sectors: [],
+    minOwned: 0,
+    rule: { key: "roe", op: "lt", value: 10, label: "ROE < 10%" },
+    sortKey: "roe",
+    sortDir: "asc",
+  },
+  {
+    id: "weight-high",
+    label: "Bobot NAV > 5%",
+    sectors: [],
+    minOwned: 0,
+    rule: { key: "weight", op: "gt", value: 5, label: "Bobot NAV > 5%" },
+    sortKey: "weight",
+    sortDir: "desc",
+  },
+  { id: "yield-top", label: "Yield dividen tertinggi", sectors: [], minOwned: 0, sortKey: "dividendYield", sortDir: "desc" },
 ];
 
 /** Top-5 concentration, Holdings screen. */
@@ -137,3 +186,44 @@ export const CONCENTRATION = [
 
 export const CONCENTRATION_TOP5 = 50.7;
 export const HHI = 0.11;
+
+/**
+ * Groups on the Ikhtisar "Filter Global" treemap. Selecting groups narrows the
+ * whole overview; the KPI figures below are stated per group (the 23 sample
+ * rows are not the full 42-issuer portfolio, so they cannot be summed from
+ * HOLDINGS). With several groups selected the page weights them by market cap.
+ */
+export interface FilterGroup {
+  key: string;
+  /** Share of portfolio market cap, percent — the treemap cell size. */
+  pct: number;
+  color: string;
+  /** Matching rule: an explicit ticker list wins over the sector. */
+  sector: Sector;
+  tickers?: string[];
+  /** Name of the matching row in SECTOR_ALLOCATION. */
+  allocationName: string;
+  issuers: number;
+  marketCap: number;
+  marketCapMoM: number;
+  returnYtd: number;
+  dividendYield: number;
+  dividendYieldYoY: number;
+  weightedRoe: number;
+  weightedRoeQoQ: number;
+}
+
+export const FILTER_GROUPS: FilterGroup[] = [
+  { key: "Himbara", pct: 44, color: "var(--accent-amber)", sector: "Perbankan", tickers: HIMBARA, allocationName: "Perbankan", issuers: 4, marketCap: 7_414, marketCapMoM: 2.9, returnYtd: 21.4, dividendYield: 3.9, dividendYieldYoY: 0.4, weightedRoe: 17.6, weightedRoeQoQ: -0.8 },
+  { key: "Energi", pct: 21, color: "var(--accent-orange)", sector: "Energi", allocationName: "Energi", issuers: 6, marketCap: 3_539, marketCapMoM: 1.8, returnYtd: 14.2, dividendYield: 5.6, dividendYieldYoY: 0.2, weightedRoe: 9.9, weightedRoeQoQ: 0.2 },
+  { key: "Telko", pct: 13, color: "var(--accent-blue)", sector: "Telekomunikasi", allocationName: "Telekomunikasi", issuers: 4, marketCap: 2_190, marketCapMoM: -0.6, returnYtd: 9.8, dividendYield: 5.2, dividendYieldYoY: -0.1, weightedRoe: 16.1, weightedRoeQoQ: -0.3 },
+  { key: "Tambang", pct: 12, color: "var(--accent-violet)", sector: "Pertambangan", allocationName: "Pertambangan", issuers: 7, marketCap: 2_022, marketCapMoM: 4.1, returnYtd: 26.3, dividendYield: 4.8, dividendYieldYoY: 0.6, weightedRoe: 15.4, weightedRoeQoQ: 0.6 },
+  { key: "Infra", pct: 10, color: "var(--status-positive)", sector: "Infrastruktur", allocationName: "Infrastruktur", issuers: 11, marketCap: 1_685, marketCapMoM: 1.2, returnYtd: 11.6, dividendYield: 1.6, dividendYieldYoY: -0.2, weightedRoe: 5.1, weightedRoeQoQ: -0.9 },
+];
+
+/** Return of the benchmark over the same period, for the "vs IHSG" delta. */
+export const IHSG_RETURN_YTD = 12.5;
+
+export function inGroup(g: FilterGroup, h: Pick<Holding, "ticker" | "sector">): boolean {
+  return g.tickers ? g.tickers.includes(h.ticker) : h.sector === g.sector;
+}

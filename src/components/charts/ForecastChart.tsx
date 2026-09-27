@@ -6,8 +6,6 @@ import { buildForecast } from "@/data/forecast";
 const W = 880;
 const H = 340;
 const PLOT_W = W - 64;
-const LO = 2900;
-const HI = 7600;
 
 const id = (n: number) => n.toLocaleString("id-ID");
 
@@ -15,8 +13,17 @@ const id = (n: number) => n.toLocaleString("id-ID");
  * Fan chart: realised history, central projection, and 50% / 80% intervals.
  * Hovering any month reads out the value and, on the forecast leg, the bounds.
  */
-export function ForecastChart() {
-  const { points, splitIndex, target } = useMemo(() => buildForecast(), []);
+export function ForecastChart({ shift = 0 }: { shift?: number }) {
+  const { points, splitIndex, target } = useMemo(() => buildForecast(shift), [shift]);
+  // The designed 2.900–7.600 range, widened when the sliders push the fan past it.
+  const { LO, HI } = useMemo(() => {
+    const his = points.map((p) => p.hi80 ?? p.actual ?? 0);
+    const los = points.map((p) => p.lo80 ?? p.actual ?? Infinity);
+    return {
+      LO: Math.min(2900, Math.floor(Math.min(...los) / 100) * 100),
+      HI: Math.max(7600, Math.ceil(Math.max(...his) / 100) * 100),
+    };
+  }, [points]);
   const svgRef = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<number | null>(null);
 

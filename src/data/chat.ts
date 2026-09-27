@@ -7,6 +7,8 @@
  * a backend, or the risk of a model inventing figures on stage.
  */
 
+import { HOLDINGS } from "@/data/holdings";
+
 export type AnswerBlock =
   | { type: "text"; text: string }
   | { type: "note"; text: string }
@@ -210,8 +212,176 @@ export const ANSWERS: ChatAnswer[] = [
   },
 ];
 
-/** Shown as clickable prompts under the composer. */
-export const SUGGESTIONS = ANSWERS.map((a) => a.question);
+/**
+ * Answers reachable only through the conversation history. Kept separate from
+ * ANSWERS so the composer's four suggestion chips stay as designed.
+ */
+const SCREENED = HOLDINGS.filter((h) => h.per !== null && h.per < 12 && h.roe > 15).sort((a, b) => b.roe - a.roe);
+
+export const HISTORY_ANSWERS: ChatAnswer[] = [
+  {
+    id: "ckpn-naik",
+    question: "Emiten mana yang beban CKPN-nya naik lebih dari 10% QoQ?",
+    seconds: "1,6",
+    blocks: [
+      {
+        type: "text",
+        text: "Tiga bank portofolio mencatat kenaikan beban CKPN di atas 10% QoQ pada Q3-2026. BBTN paling tajam, sejalan dengan NPL gross yang naik ke 3,4%.",
+      },
+      {
+        type: "table",
+        head: ["Emiten", "CKPN Q2-26", "CKPN Q3-26", "QoQ"],
+        rows: [
+          { cells: ["BBTN", "Rp 1.084 M", "Rp 1.238 M", "+14,2%"], tone: "neg" },
+          { cells: ["BRIS", "Rp 912 M", "Rp 1.020 M", "+11,8%"], tone: "neg" },
+          { cells: ["BBRI", "Rp 8.904 M", "Rp 9.846 M", "+10,6%"], tone: "neg" },
+        ],
+      },
+      {
+        type: "note",
+        text: "Ambang 10% QoQ dipilih pengguna, bukan batas kebijakan. Rp dalam miliar, belum diaudit.",
+      },
+    ],
+    citations: ["XBRL Q2–Q3 2026 · 3 bank", "Siaran pers BBRI 24 Sep 2026"],
+  },
+  {
+    id: "ringkasan-tlkm",
+    question: "Ringkas laporan keuangan Q3-2026 TLKM.",
+    seconds: "2,2",
+    blocks: [
+      {
+        type: "text",
+        text: "Pendapatan TLKM tumbuh tipis 2,4% YoY, tetapi margin EBITDA turun 1,1 pp karena beban interkoneksi dan penyusutan jaringan fiber. Manajemen memangkas belanja modal 6% untuk menjaga arus kas bebas.",
+      },
+      {
+        type: "table",
+        head: ["Pos", "Q3-25", "Q3-26", "YoY"],
+        rows: [
+          { cells: ["Pendapatan", "Rp 37,8 T", "Rp 38,7 T", "+2,4%"] },
+          { cells: ["EBITDA", "Rp 19,6 T", "Rp 19,6 T", "+0,1%"] },
+          { cells: ["Margin EBITDA", "51,8%", "50,7%", "-1,1 pp"], tone: "neg" },
+          { cells: ["Laba bersih", "Rp 6,1 T", "Rp 5,8 T", "-4,9%"], tone: "neg" },
+          { cells: ["Belanja modal", "Rp 7,4 T", "Rp 6,9 T", "-6,0%"] },
+        ],
+      },
+      {
+        type: "callout",
+        label: "ROE terkini · TLKM",
+        value: "17,6%",
+        href: "/laporan-keuangan",
+        cta: "BUKA LAPORAN KEUANGAN",
+      },
+    ],
+    citations: ["XBRL TLKM Q3-2026 §L/R", "Paparan publik TLKM 2026"],
+  },
+  {
+    id: "screener",
+    question: "Saring emiten portofolio dengan PER di bawah 12x dan ROE di atas 15%.",
+    seconds: "0,9",
+    blocks: [
+      {
+        type: "text",
+        text: `${SCREENED.length} emiten lolos saringan, semuanya dengan yield dividen di atas rata-rata portofolio 3,4%.`,
+      },
+      {
+        type: "table",
+        head: ["Emiten", "PER", "ROE", "Yield", "Bobot NAV"],
+        rows: SCREENED.map((h) => ({
+          cells: [
+            h.ticker,
+            `${h.per!.toFixed(1).replace(".", ",")}x`,
+            `${h.roe.toFixed(1).replace(".", ",")}%`,
+            `${h.dividendYield.toFixed(1).replace(".", ",")}%`,
+            `${h.weight.toFixed(1).replace(".", ",")}%`,
+          ],
+        })),
+      },
+      {
+        type: "note",
+        text: "Dihitung langsung dari tabel Holdings. BBRI nyaris lolos — PER 12,4x.",
+      },
+    ],
+    citations: ["Tabel Holdings · 23 emiten", "IDX API · harga 26 Sep 2026"],
+  },
+  {
+    id: "nikel-antm",
+    question: "Seberapa besar dampak harga nikel terhadap laba ANTM?",
+    seconds: "2,7",
+    blocks: [
+      {
+        type: "text",
+        text: "Setiap perubahan 10% harga nikel LME menggeser laba bersih ANTM sekitar 6,8% ke arah yang sama. Kontrak pasokan jangka panjang dengan mitra Korea mengunci sekitar 35% volume, sehingga sensitivitasnya lebih rendah dari tahun lalu.",
+      },
+      {
+        type: "table",
+        head: ["Harga nikel", "Laba bersih 2027F", "Perubahan"],
+        rows: [
+          { cells: ["-20%", "Rp 3,1 T", "-13,6%"], tone: "neg" },
+          { cells: ["-10%", "Rp 3,4 T", "-6,8%"], tone: "neg" },
+          { cells: ["Dasar", "Rp 3,6 T", "—"] },
+          { cells: ["+10%", "Rp 3,9 T", "+6,8%"] },
+        ],
+      },
+      {
+        type: "note",
+        text: "Elastisitas dari regresi 36 bulan. Tidak memodelkan kebijakan larangan ekspor bijih.",
+      },
+    ],
+    citations: ["XBRL ANTM 2023–Q3 2026", "Siaran pers ANTM · kontrak nikel", "Data harga LME"],
+  },
+  {
+    id: "dividen-2027",
+    question: "Berapa proyeksi dividen yang diterima Danantara pada 2027?",
+    seconds: "3,4",
+    blocks: [
+      {
+        type: "text",
+        text: "Dividen tunai yang diterima Danantara dari emiten tercatat diproyeksikan Rp 118 T pada 2027, naik 7,3% dari estimasi 2026. Empat bank Himbara dan TLKM menyumbang sekitar 78%.",
+      },
+      {
+        type: "bars",
+        labels: ["BBRI", "BMRI", "TLKM", "BBNI", "PTBA"],
+        max: 40,
+        unit: "Rp T",
+        series: [
+          { name: "2026E", color: "var(--text-secondary)", values: [31.2, 26.4, 12.8, 9.6, 5.1] },
+          { name: "2027F", color: "var(--accent-amber)", values: [33.8, 28.9, 13.1, 10.4, 4.6] },
+        ],
+      },
+      {
+        type: "callout",
+        label: "Total dividen diterima 2027F",
+        value: "Rp 118 T",
+        delta: "+7,3% YoY",
+        intervalLabel: "Rentang skenario",
+        interval: "Rp 104 T — Rp 129 T",
+      },
+    ],
+    citations: ["Model dividen v1.2", "Kebijakan dividen RUPS 2026 · 5 emiten"],
+  },
+];
+
+/** Every scripted answer, for matching typed questions. */
+export const ALL_ANSWERS: ChatAnswer[] = [...ANSWERS, ...HISTORY_ANSWERS];
+
+export interface Conversation {
+  id: string;
+  group: string;
+  title: string;
+  /** Scripted answers replayed in order when the conversation is opened. */
+  answerIds: string[];
+}
+
+/** Earlier conversations in the history panel; opening one replays it. */
+export const CONVERSATIONS: Conversation[] = [
+  { id: "c-roe", group: "Hari ini", title: "Perbandingan ROE Himbara Q3-26", answerIds: ["roe-himbara", "yield-himbara"] },
+  { id: "c-ckpn", group: "Hari ini", title: "Emiten dengan CKPN naik >10% QoQ", answerIds: ["ckpn-naik"] },
+  { id: "c-bi", group: "Hari ini", title: "Sensitivitas NAV terhadap BI rate", answerIds: ["sensitivitas-bi"] },
+  { id: "c-tlkm", group: "Kemarin", title: "Ringkasan laporan Q3 TLKM", answerIds: ["ringkasan-tlkm"] },
+  { id: "c-screener", group: "Kemarin", title: "Screener PER < 12 dan ROE > 15%", answerIds: ["screener"] },
+  { id: "c-nikel", group: "Minggu ini", title: "Dampak harga nikel ke ANTM", answerIds: ["nikel-antm"] },
+  { id: "c-dividen", group: "Minggu ini", title: "Proyeksi dividen 2027", answerIds: ["dividen-2027"] },
+];
 
 export const FALLBACK: ChatAnswer = {
   id: "fallback",
@@ -220,7 +390,7 @@ export const FALLBACK: ChatAnswer = {
   blocks: [
     {
       type: "text",
-      text: "PoC ini memakai jawaban terskrip, jadi hanya empat pertanyaan contoh di bawah yang punya jawaban lengkap. Pilih salah satunya untuk melihat bentuk jawaban bersumber: prosa, tabel, grafik, proyeksi, dan rujukan.",
+      text: "PoC ini memakai jawaban terskrip, jadi hanya pertanyaan contoh di bawah dan percakapan di Riwayat yang punya jawaban lengkap. Pilih salah satunya untuk melihat bentuk jawaban bersumber: prosa, tabel, grafik, proyeksi, dan rujukan.",
     },
     {
       type: "note",

@@ -18,17 +18,29 @@ nilainya fiktif. Situsnya publik bagi yang memegang tautan, jadi ini penting.
 
 ## Struktur
 
-- `src/app/<rute>/page.tsx` — lima layar: `/` Ikhtisar, `/holdings`,
-  `/laporan-keuangan`, `/prediksi`, `/chat`
-- `src/components/Shell.tsx` — app bar, pita perintah, tab, banner disclaimer
+- `src/app/<rute>/page.tsx` — enam layar: `/` Ikhtisar, `/holdings`,
+  `/laporan-keuangan`, `/laporan-tahunan`, `/prediksi`, `/chat`
+- `src/components/Shell.tsx` — app bar, pita meta, tab, banner disclaimer
+- `src/components/chat/` — `ChatContext` (satu percakapan untuk seluruh app,
+  dipasang di `layout.tsx`), `ChatPopup` (tombol mengambang di setiap layar,
+  disembunyikan di `/chat`), `Transcript` (transkrip + composer bersama)
+- `src/components/EmitenList.tsx` — daftar emiten yang bisa dipilih
 - `src/components/Panel.tsx` — Panel, KpiTile, BarRow, AlertRow, Treemap
-- `src/components/Term.tsx` — tooltip glosarium
+- `src/components/Term.tsx` — tooltip glosarium; di-portal ke `<body>` dengan
+  posisi `fixed` dan dijepit ke viewport (mengikuti kursor, pindah sisi bila
+  mentok tepi layar)
 - `src/components/charts/` — PricePanel (candlestick + volume + RSI + MACD),
   ForecastChart (fan chart), MiniCharts (tren rasio, YoY, donat, sparkline)
 - `src/data/` — **semua** data contoh. Komponen tidak boleh menulis angka
   langsung; ganti data di sini saja.
 - `src/data/glossary.ts` — definisi istilah, diringkas dari Knowledge Base;
-  field `ref` menunjuk nomor bagiannya
+  field `ref` menunjuk nomor bagiannya. Istilah tambahan PoC tanpa `ref`
+  otomatis diberi label "belum ada di Knowledge Base".
+- `src/data/prng.ts` — PRNG ber-seed bersama (`seeded`, `gaussian`, `seedOf`)
+- `src/data/fundamentals.ts` — `buildFundamentals(ticker)`: BBRI memakai angka
+  tulisan tangan; emiten lain diturunkan dari barisnya di Holdings + PRNG
+- `src/data/annual.ts` — indikator laporan tahunan per bidang (Operasional,
+  Teknologi/IT, MSDM/HRD, Risk, Marketing/Sales, ESG) lewat `buildAnnual(ticker)`
 - `src/app/globals.css` — token desain dan seluruh aturan responsif
 
 ## Aturan yang tidak boleh dilanggar
@@ -49,8 +61,11 @@ nilainya fiktif. Situsnya publik bagi yang memegang tautan, jadi ini penting.
 - Jangan menaruh tombol di dalam tombol — `<Term>` adalah `<button>`, jadi
   jangan membungkusnya dengan `<button>` lain (memicu hydration error).
 - Warna hanya lewat token `var(--…)` dari `:root` di `globals.css`.
-- Seri data dibangkitkan dengan PRNG ber-seed agar render server dan klien
-  sama. Jangan pakai `Math.random()` atau `Date.now()` saat render.
+- Seri data dibangkitkan dengan PRNG ber-seed (`src/data/prng.ts`) agar render
+  server dan klien sama. Jangan pakai `Math.random()` atau `Date.now()` saat render.
+- Emiten terpilih di Laporan Keuangan dan Laporan Tahunan disimpan di URL
+  (`?emiten=TLKM`). `useSearchParams` wajib di dalam `<Suspense>` yang
+  fallback-nya merender BBRI, supaya HTML statis tidak kosong.
 
 ## Responsif
 
@@ -70,6 +85,11 @@ build gagal (`NEXT_NO_ROUTES_MANIFEST`).
 
 - Tiga aturan bisnis di layar Holdings dikarang untuk PoC: pagu sektor 40%,
   ambang mandat ROE, dan HHI sebagai ukuran konsentrasi.
+- Elastisitas slider asumsi di Prediksi (BI rate -6%/pp, kredit +1,5%/pp,
+  NPL -4%/pp terhadap target harga) dikarang, bukan hasil model.
+- KPI per grup Filter Global di Ikhtisar (`FILTER_GROUPS`) dan seluruh
+  indikator Laporan Tahunan — termasuk pemilihan indikatornya — adalah
+  asumsi PoC; belum ada definisi baku dari Knowledge Base.
 - Knowledge Base sendiri menyatakan formula berikut belum ditetapkan:
   Fundamental Score, Effective Yield / Dividend Yield, probabilitas skenario,
   algoritma sentimen, hyperparameter model prediksi.

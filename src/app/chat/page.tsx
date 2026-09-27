@@ -1,44 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { Panel } from "@/components/Panel";
 import { Term } from "@/components/Term";
-import { GroupedBars } from "@/components/charts/MiniCharts";
-import { ANSWERS, FALLBACK, type AnswerBlock, type ChatAnswer } from "@/data/chat";
-import { KNOWLEDGE_SOURCES, CHAT_HISTORY, RETRIEVED_DOCS, LINEAGE, GENERATED_QUERY, TOKEN_USAGE } from "@/data/feed";
+import { useChat } from "@/components/chat/ChatContext";
+import { Transcript, Composer } from "@/components/chat/Transcript";
+import { CONVERSATIONS } from "@/data/chat";
+import { KNOWLEDGE_SOURCES, RETRIEVED_DOCS, LINEAGE, GENERATED_QUERY, TOKEN_USAGE } from "@/data/feed";
 
-interface Turn {
-  question: string;
-  answer: ChatAnswer;
-}
+/** History panel groups: this session's new chats first, then the stored ones. */
+const GROUPS = Array.from(new Set(CONVERSATIONS.map((c) => c.group)));
 
 export default function ChatPage() {
-  const [turns, setTurns] = useState<Turn[]>([{ question: ANSWERS[0].question, answer: ANSWERS[0] }]);
-  const [draft, setDraft] = useState("");
+  const { activeId, sessionThreads, open, startNew } = useChat();
   const [sources, setSources] = useState(
     Object.fromEntries(KNOWLEDGE_SOURCES.map((s) => [s.label, s.enabled])) as Record<string, boolean>,
   );
 
-  function ask(question: string) {
-    const text = question.trim();
-    if (!text) return;
-    // Scripted: match a known question, else explain that this is a mockup.
-    const hit = ANSWERS.find(
-      (a) => a.question.toLowerCase() === text.toLowerCase() || a.question.toLowerCase().includes(text.toLowerCase()),
-    );
-    setTurns((t) => [...t, { question: text, answer: hit ?? { ...FALLBACK, question: text } }]);
-    setDraft("");
-  }
+  const history = [
+    ...(sessionThreads.length ? [{ group: "Sesi ini", items: sessionThreads }] : []),
+    ...GROUPS.map((g) => ({ group: g, items: CONVERSATIONS.filter((c) => c.group === g) })),
+  ];
 
   const activeSources = Object.values(sources).filter(Boolean).length;
 
   return (
     <Shell
       subtitle="Asisten Riset Berbasis Pengetahuan"
-      command=">AI CHAT · SUMBER: XBRL + IDX API + MODEL<GO>"
-      meta="6.188 DOKUMEN TERINDEKS · JAWABAN SELALU BERSUMBER"
+      meta="AI CHAT · SUMBER: XBRL + IDX API + MODEL · 6.188 DOKUMEN TERINDEKS · JAWABAN SELALU BERSUMBER"
     >
       <main
         className="main-grid"
@@ -46,37 +36,51 @@ export default function ChatPage() {
       >
         {/* ---------------- left ---------------- */}
         <div className="col col-left">
-          <Panel title="Riwayat Percakapan" chip="BARU" style={{ height: 330 }} bodyStyle={{ padding: 8, overflow: "auto" }}>
+          <Panel
+            title="Riwayat Percakapan"
+            extra={
+              <button type="button" className="chat-pop-btn mono" onClick={startNew} title="Mulai percakapan baru">
+                + BARU
+              </button>
+            }
+            style={{ height: 330 }}
+            bodyStyle={{ padding: 8, overflow: "auto" }}
+          >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {CHAT_HISTORY.map((g) => (
+              {history.map((g) => (
                 <div key={g.group}>
                   <span className="mono dim" style={{ display: "block", marginTop: 8, fontSize: "calc(9px * var(--fs-scale))", fontWeight: 600, letterSpacing: "0.08em" }}>
                     {g.group.toUpperCase()}
                   </span>
-                  {g.items.map((item, i) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => ask(item)}
-                      className="truncate tap"
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        textAlign: "left",
-                        padding: "5px 7px",
-                        background: g.group === "Hari ini" && i === 0 ? "#1b212c" : "transparent",
-                        borderLeft: `2px solid ${g.group === "Hari ini" && i === 0 ? "var(--accent-amber)" : "transparent"}`,
-                        borderTop: 0,
-                        borderRight: 0,
-                        borderBottom: 0,
-                        fontSize: "calc(11px * var(--fs-scale))",
-                        color: g.group === "Hari ini" && i === 0 ? "var(--text-primary)" : "var(--text-secondary)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {item}
-                    </button>
-                  ))}
+                  {g.items.map((item) => {
+                    const on = item.id === activeId;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => open(item.id)}
+                        aria-current={on ? "true" : undefined}
+                        className="truncate tap history-item"
+                        title={item.title}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "5px 7px",
+                          background: on ? "#1b212c" : "transparent",
+                          borderLeft: `2px solid ${on ? "var(--accent-amber)" : "transparent"}`,
+                          borderTop: 0,
+                          borderRight: 0,
+                          borderBottom: 0,
+                          fontSize: "calc(11px * var(--fs-scale))",
+                          color: on ? "var(--text-primary)" : "var(--text-secondary)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {item.title}
+                      </button>
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -124,129 +128,8 @@ export default function ChatPage() {
 
         {/* ---------------- transcript ---------------- */}
         <div className="col col-main">
-          <div
-            style={{
-              flexGrow: 1,
-              minHeight: 0,
-              overflow: "auto",
-              padding: "12px 14px",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-hairline)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 14,
-            }}
-          >
-            {turns.map((t, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <div
-                    style={{
-                      maxWidth: "76%",
-                      padding: "9px 12px",
-                      background: "#1b212c",
-                      border: "1px solid var(--border-hairline)",
-                      borderRight: "2px solid var(--accent-amber)",
-                    }}
-                  >
-                    <p style={{ margin: 0, fontSize: "calc(12.5px * var(--fs-scale))", lineHeight: 1.5 }}>{t.question}</p>
-                    <span className="mono dim" style={{ display: "block", marginTop: 5, fontSize: "calc(9px * var(--fs-scale))", textAlign: "right" }}>
-                      Analis Portofolio
-                    </span>
-                  </div>
-                </div>
-                <AnswerBubble answer={t.answer} />
-              </div>
-            ))}
-          </div>
-
-          <div
-            style={{
-              flexShrink: 0,
-              padding: "9px 10px",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-hairline)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-              {ANSWERS.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => ask(a.question)}
-                  className="tap"
-                  style={{
-                    textAlign: "left",
-                    padding: "5px 8px",
-                    fontSize: "calc(10.5px * var(--fs-scale))",
-                    color: "var(--text-secondary)",
-                    background: "transparent",
-                    border: "1px solid var(--border-hairline)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {a.question}
-                </button>
-              ))}
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                ask(draft);
-              }}
-              style={{ display: "flex", alignItems: "flex-end", gap: 8 }}
-            >
-              <label htmlFor="prompt" className="sr-only">
-                Tulis pertanyaan
-              </label>
-              <textarea
-                id="prompt"
-                rows={2}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    ask(draft);
-                  }
-                }}
-                placeholder="Tanyakan apa saja tentang harga saham, laporan keuangan, atau proyeksi portofolio…"
-                style={{
-                  flexGrow: 1,
-                  minWidth: 0,
-                  padding: "8px 10px",
-                  resize: "none",
-                  background: "var(--bg-input)",
-                  border: "1px solid var(--border-hairline)",
-                  outline: "none",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "calc(12px * var(--fs-scale))",
-                  lineHeight: 1.45,
-                  color: "var(--text-primary)",
-                }}
-              />
-              <button
-                type="submit"
-                className="mono"
-                style={{
-                  height: 44,
-                  padding: "0 18px",
-                  fontSize: "calc(11px * var(--fs-scale))",
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  color: "var(--text-on-accent)",
-                  background: "var(--accent-amber)",
-                  border: 0,
-                  cursor: "pointer",
-                }}
-              >
-                KIRIM
-              </button>
-            </form>
-          </div>
+          <Transcript />
+          <Composer />
         </div>
 
         {/* ---------------- context ---------------- */}
@@ -335,150 +218,4 @@ export default function ChatPage() {
       </main>
     </Shell>
   );
-}
-
-function AnswerBubble({ answer }: { answer: ChatAnswer }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-amber)" }}>
-          <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M8 1.5 14 5v6l-6 3.5L2 11V5z" fill="none" stroke="var(--text-on-accent)" strokeWidth="1.3" />
-          </svg>
-        </span>
-        <span className="mono" style={{ fontSize: "calc(10px * var(--fs-scale))", fontWeight: 700, letterSpacing: "0.08em", color: "var(--accent-amber)" }}>
-          DANANTARA AI
-        </span>
-        <span className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))" }}>
-          dijawab dalam {answer.seconds} dtk · terskrip
-        </span>
-      </div>
-
-      <div
-        style={{
-          padding: "11px 13px",
-          background: "var(--bg-base)",
-          border: "1px solid var(--border-hairline)",
-          borderLeft: "2px solid var(--accent-amber)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 11,
-        }}
-      >
-        {answer.blocks.map((b, i) => (
-          <Block key={i} block={b} />
-        ))}
-
-        {answer.citations.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, paddingTop: 9, borderTop: "1px solid var(--border-hairline)" }}>
-            {answer.citations.map((c, i) => (
-              <span key={c} className="mono dim" style={{ fontSize: "calc(9px * var(--fs-scale))", border: "1px solid var(--border-hairline)", padding: "2px 6px" }}>
-                {i + 1}. {c}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Block({ block }: { block: AnswerBlock }) {
-  switch (block.type) {
-    case "text":
-      return <p style={{ margin: 0, fontSize: "calc(12.5px * var(--fs-scale))", lineHeight: 1.55 }}>{block.text}</p>;
-
-    case "note":
-      return (
-        <p className="dim" style={{ margin: 0, fontSize: "calc(11.5px * var(--fs-scale))", lineHeight: 1.5 }}>
-          {block.text}
-        </p>
-      );
-
-    case "table":
-      return (
-        <div style={{ background: "var(--bg-input)", border: "1px solid var(--border-hairline)" }}>
-          <table className="tbl">
-            <thead>
-              <tr>
-                {block.head.map((h, i) => (
-                  <th key={h} className={i === 0 ? "left" : undefined} style={{ background: "var(--bg-input)" }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {block.rows.map((r) => (
-                <tr key={r.cells[0]} style={{ background: "transparent" }}>
-                  {r.cells.map((c, i) => (
-                    <td
-                      key={i}
-                      className={i === 0 ? "left" : r.tone === "neg" ? "neg" : undefined}
-                      style={{ fontFamily: i === 0 ? "var(--font-sans)" : undefined, fontSize: "calc(11px * var(--fs-scale))", fontWeight: i === 0 ? 400 : 600 }}
-                    >
-                      {c}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-
-    case "bars":
-      return <GroupedBars labels={block.labels} series={block.series} max={block.max} unit={block.unit} />;
-
-    case "callout":
-      return (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 12,
-            padding: "9px 11px",
-            background: "var(--bg-row-alt)",
-            border: "1px solid var(--border-hairline)",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <span className="dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              {block.label}
-            </span>
-            <span className="mono" style={{ fontSize: "calc(19px * var(--fs-scale))", fontWeight: 600 }}>
-              {block.value}{" "}
-              {block.delta && (
-                <span className="pos" style={{ fontSize: "calc(12px * var(--fs-scale))" }}>
-                  {block.delta}
-                </span>
-              )}
-            </span>
-          </div>
-          {block.interval && (
-            <>
-              <span style={{ width: 1, height: 34, background: "var(--border-hairline)" }} />
-              <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 1 }}>
-                <span className="dim" style={{ fontSize: "calc(9.5px * var(--fs-scale))", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                  {block.intervalLabel}
-                </span>
-                <span className="mono" style={{ fontSize: "calc(13px * var(--fs-scale))" }}>
-                  {block.interval}
-                </span>
-              </div>
-            </>
-          )}
-          {block.href && (
-            <Link
-              href={block.href}
-              className="mono"
-              style={{ padding: "7px 11px", fontSize: "calc(10px * var(--fs-scale))", fontWeight: 600, textDecoration: "none", color: "var(--text-on-accent)", background: "var(--accent-amber)" }}
-            >
-              {block.cta}
-            </Link>
-          )}
-        </div>
-      );
-  }
 }

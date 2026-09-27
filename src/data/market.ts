@@ -9,6 +9,8 @@
  * render agree — a Math.random() series would hydrate mismatched.
  */
 
+import { seeded, gaussian } from "@/data/prng";
+
 export interface Candle {
   /** Short month label, e.g. "Sep". */
   label: string;
@@ -30,22 +32,6 @@ export interface Quote {
   changePct: number;
 }
 
-/** Mulberry32 — small deterministic PRNG. */
-function seeded(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Box–Muller transform over the seeded uniform stream. */
-function gaussian(rnd: () => number): number {
-  const u = Math.max(rnd(), Number.EPSILON);
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd());
-}
 
 const MONTHS = ["Okt", "Nov", "Des", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
 
@@ -142,12 +128,12 @@ export const YOY_GROWTH: { label: string; value: number }[] = [
   { label: "Sep", value: 9.6 },
 ];
 
-/** Danantara's share of Himbara lending. */
+/** Share of Himbara lending; `value` is outstanding loans, trillions Rp. */
 export const HIMBARA_SHARE = [
-  { name: "BBRI", pct: 34, color: "var(--accent-amber)" },
-  { name: "BMRI", pct: 31, color: "var(--accent-orange)" },
-  { name: "BBNI", pct: 20, color: "var(--accent-blue)" },
-  { name: "BBTN", pct: 15, color: "var(--accent-violet)" },
+  { name: "BBRI", pct: 34, value: 2414, color: "var(--accent-amber)" },
+  { name: "BMRI", pct: 31, value: 2201, color: "var(--accent-orange)" },
+  { name: "BBNI", pct: 20, value: 1420, color: "var(--accent-blue)" },
+  { name: "BBTN", pct: 15, value: 1065, color: "var(--accent-violet)" },
 ];
 
 /** BBRI revenue split, 9M-2026. */
@@ -157,13 +143,4 @@ export const REVENUE_SEGMENTS = [
   { name: "Konsumer", pct: 17, color: "var(--accent-blue)" },
   { name: "Treasury", pct: 11, color: "var(--accent-violet)" },
   { name: "Fee", pct: 7, color: "var(--status-positive)" },
-];
-
-/** Region / sector treemap on the global filter panel. */
-export const FILTER_TREEMAP = [
-  { name: "Himbara", pct: 44, color: "var(--accent-amber)" },
-  { name: "Energi", pct: 21, color: "var(--accent-orange)" },
-  { name: "Telko", pct: 13, color: "var(--accent-blue)" },
-  { name: "Tambang", pct: 12, color: "var(--accent-violet)" },
-  { name: "Infra", pct: 10, color: "var(--status-positive)" },
 ];
