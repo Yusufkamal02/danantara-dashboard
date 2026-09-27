@@ -73,3 +73,8 @@ build gagal (`NEXT_NO_ROUTES_MANIFEST`).
 - Knowledge Base sendiri menyatakan formula berikut belum ditetapkan:
   Fundamental Score, Effective Yield / Dividend Yield, probabilitas skenario,
   algoritma sentimen, hyperparameter model prediksi.
+
+## Catatan sesi
+
+Keputusan yang sudah diambil, lokasi penting, dan pekerjaan terbuka:
+@SESSION_NOTES.md
