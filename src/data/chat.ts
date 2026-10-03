@@ -383,6 +383,70 @@ export const CONVERSATIONS: Conversation[] = [
   { id: "c-dividen", group: "Minggu ini", title: "Proyeksi dividen 2027", answerIds: ["dividen-2027"] },
 ];
 
+/** Files the composer accepts. They stay in the browser as object URLs. */
+export type AttachmentKind = "image" | "audio" | "video" | "document";
+
+/** Document extensions accepted alongside image/audio/video MIME types. */
+export const DOCUMENT_EXTENSIONS = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "csv", "txt", "md", "rtf", "odt", "ods", "odp", "json"];
+
+/** Documents a browser tab can show itself; the rest are downloaded. */
+export const VIEWABLE_DOCUMENTS = ["pdf", "txt", "md", "csv", "json"];
+
+export interface ChatAttachment {
+  name: string;
+  kind: AttachmentKind;
+  /** Bytes. */
+  size: number;
+}
+
+export const ATTACHMENT_LIMITS = { maxFiles: 6, maxBytes: 100 * 1024 * 1024 };
+
+export const ATTACHMENT_LABEL: Record<AttachmentKind, string> = {
+  image: "Gambar",
+  audio: "Suara",
+  video: "Video",
+  document: "Dokumen",
+};
+
+/** "1,4 MB" — Indonesian decimal comma, like every other figure here. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let v = bytes / 1024;
+  let u = 0;
+  while (v >= 1024 && u < units.length - 1) {
+    v /= 1024;
+    u += 1;
+  }
+  return `${v.toFixed(v < 10 ? 1 : 0).replace(".", ",")} ${units[u]}`;
+}
+
+/** Scripted reply to a message with attachments: acknowledge, never analyse. */
+export function mediaAnswer(files: ChatAttachment[], question: string): ChatAnswer {
+  const kinds = Array.from(new Set(files.map((f) => ATTACHMENT_LABEL[f.kind].toLowerCase())));
+  return {
+    id: "media",
+    question,
+    seconds: "0,3",
+    blocks: [
+      {
+        type: "text",
+        text: `${files.length} lampiran diterima (${kinds.join(", ")}). PoC ini belum menganalisis isi lampiran, jadi yang bisa ditampilkan baru daftar berkasnya. Lampiran hanya diputar di browser Anda — tidak diunggah ke server mana pun.`,
+      },
+      {
+        type: "table",
+        head: ["Berkas", "Jenis", "Ukuran"],
+        rows: files.map((f) => ({ cells: [f.name, ATTACHMENT_LABEL[f.kind], formatBytes(f.size)] })),
+      },
+      {
+        type: "note",
+        text: "Pada implementasi penuh: gambar (tangkapan layar grafik, tabel laporan) dibaca lewat OCR/vision, rekaman suara dan video (paparan publik, RUPS) ditranskripsi, dokumen (PDF, Word, Excel, PowerPoint) diekstrak teks dan tabelnya, lalu isinya diindeks agar bisa dirujuk dalam jawaban.",
+      },
+    ],
+    citations: [],
+  };
+}
+
 export const FALLBACK: ChatAnswer = {
   id: "fallback",
   question: "",

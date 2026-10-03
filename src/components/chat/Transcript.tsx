@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { GroupedBars } from "@/components/charts/MiniCharts";
-import { ANSWERS, type AnswerBlock, type ChatAnswer } from "@/data/chat";
-import { useChat } from "@/components/chat/ChatContext";
+import {
+  ANSWERS,
+  ATTACHMENT_LABEL,
+  ATTACHMENT_LIMITS,
+  DOCUMENT_EXTENSIONS,
+  VIEWABLE_DOCUMENTS,
+  formatBytes,
+  type AnswerBlock,
+  type AttachmentKind,
+  type ChatAnswer,
+} from "@/data/chat";
+import { useChat, type Attachment } from "@/components/chat/ChatContext";
+import { useSpeechInput } from "@/components/chat/useSpeechInput";
 
 /**
  * The running conversation. Scrolls the newest question into view when a turn
@@ -32,6 +43,7 @@ export function Transcript({ compact = false }: { compact?: boolean }) {
   return (
     <div
       ref={boxRef}
+      className="chat-transcript"
       style={{
         position: "relative",
         flexGrow: 1,
@@ -54,6 +66,7 @@ export function Transcript({ compact = false }: { compact?: boolean }) {
         <div key={i} ref={i === turns.length - 1 ? lastRef : undefined} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <div
+              className={t.attachments?.length ? "chat-q chat-q-media" : "chat-q"}
               style={{
                 maxWidth: compact ? "88%" : "76%",
                 padding: "9px 12px",
@@ -62,7 +75,8 @@ export function Transcript({ compact = false }: { compact?: boolean }) {
                 borderRight: "2px solid var(--accent-amber)",
               }}
             >
-              <p style={{ margin: 0, fontSize: "calc(12.5px * var(--fs-scale))", lineHeight: 1.5 }}>{t.question}</p>
+              {t.attachments && t.attachments.length > 0 && <MediaGrid files={t.attachments} />}
+              {t.question && <p style={{ margin: 0, fontSize: "calc(12.5px * var(--fs-scale))", lineHeight: 1.5 }}>{t.question}</p>}
               <span className="mono dim" style={{ display: "block", marginTop: 5, fontSize: "calc(9px * var(--fs-scale))", textAlign: "right" }}>
                 Analis Portofolio
               </span>
@@ -75,30 +89,181 @@ export function Transcript({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Suggestion chips and the question box. */
-export function Composer({ compact = false }: { compact?: boolean }) {
+/** Attached media inside a question bubble, playable in place. */
+function MediaGrid({ files }: { files: Attachment[] }) {
+  return (
+    <div className="chat-media">
+      {files.map((f) => (
+        <figure key={f.id} className={`chat-media-item chat-media-${f.kind}`}>
+          {f.kind === "image" && (
+            <a href={f.url} target="_blank" rel="noopener noreferrer" title={`Buka ${f.name} di tab baru`}>
+              {/* Object URLs cannot go through next/image. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={f.url} alt={f.name} />
+            </a>
+          )}
+          {f.kind === "video" && <video src={f.url} controls playsInline preload="metadata" />}
+          {f.kind === "audio" && <audio src={f.url} controls preload="metadata" />}
+          {f.kind === "document" && <DocumentLink file={f} />}
+          {f.kind !== "document" && (
+            <figcaption className="mono dim">
+              <span className="truncate">{f.name}</span>
+              <span>{formatBytes(f.size)}</span>
+            </figcaption>
+          )}
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+const extOf = (name: string) => (name.includes(".") ? name.split(".").pop()!.toLowerCase() : "");
+
+/** PDFs and plain text open in a tab; Office files can only be downloaded. */
+function DocumentLink({ file }: { file: Attachment }) {
+  const ext = extOf(file.name);
+  const viewable = VIEWABLE_DOCUMENTS.includes(ext);
+  return (
+    <a
+      className="chat-doc"
+      href={file.url}
+      {...(viewable ? { target: "_blank", rel: "noopener noreferrer" } : { download: file.name })}
+      title={viewable ? `Buka ${file.name} di tab baru` : `Unduh ${file.name}`}
+    >
+      <DocBadge ext={ext} />
+      <span className="chat-doc-meta">
+        <span className="truncate">{file.name}</span>
+        <span className="mono dim">
+          {formatBytes(file.size)} · {viewable ? "BUKA" : "UNDUH"}
+        </span>
+      </span>
+    </a>
+  );
+}
+
+function DocBadge({ ext }: { ext: string }) {
+  return <span className={`chat-doc-badge mono doc-${ext}`}>{(ext || "DOK").slice(0, 4).toUpperCase()}</span>;
+}
+
+function kindOf(file: File): AttachmentKind | null {
+  const t = file.type.split("/")[0];
+  if (t === "image" || t === "audio" || t === "video") return t;
+  // Office files often arrive with an empty or vendor MIME type, so go by name.
+  return DOCUMENT_EXTENSIONS.includes(extOf(file.name)) ? "document" : null;
+}
+
+const ACCEPT = ["image/*", "audio/*", "video/*", ...DOCUMENT_EXTENSIONS.map((e) => `.${e}`)].join(",");
+
+/**
+ * Suggestion chips, pending attachments and the question box. `docked` pins it
+ * to the bottom of the viewport on screens where the transcript cannot fill
+ * the window by itself (see `.is-docked` in globals.css).
+ */
+export function Composer({ compact = false, docked = false }: { compact?: boolean; docked?: boolean }) {
   const { ask } = useChat();
   const [draft, setDraft] = useState("");
+  const [pending, setPending] = useState<Attachment[]>([]);
+  const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const seq = useRef(0);
+
+  // Dictation appends to whatever was typed before the mic was switched on.
+  const dictationBase = useRef("");
+  const onDictation = useCallback((t: string) => setDraft(dictationBase.current + t), []);
+  const speech = useSpeechInput(onDictation, setError);
+
+  function toggleMic() {
+    if (speech.listening) return speech.stop();
+    dictationBase.current = draft.trim() ? `${draft.trim()} ` : "";
+    setError("");
+    speech.start();
+  }
+
+  // A docked composer floats over the page, so the page reserves its height.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!docked || !el) return;
+    const root = document.documentElement;
+    const ro = new ResizeObserver(() => root.style.setProperty("--chat-dock-h", `${el.offsetHeight}px`));
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--chat-dock-h");
+    };
+  }, [docked]);
+
+  // Files left unsent when the composer goes away (popup closed) would keep
+  // their object URLs alive for the rest of the session.
+  const pendingRef = useRef(pending);
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
+  useEffect(() => () => pendingRef.current.forEach((f) => URL.revokeObjectURL(f.url)), []);
+
+  function addFiles(list: FileList | File[]) {
+    const files = Array.from(list);
+    if (files.length === 0) return;
+    const room = ATTACHMENT_LIMITS.maxFiles - pending.length;
+    const problems: string[] = [];
+    const next: Attachment[] = [];
+    for (const file of files) {
+      const kind = kindOf(file);
+      if (!kind) {
+        problems.push(`${file.name} bukan gambar, suara, video, atau dokumen`);
+      } else if (file.size > ATTACHMENT_LIMITS.maxBytes) {
+        problems.push(`${file.name} melebihi ${formatBytes(ATTACHMENT_LIMITS.maxBytes)}`);
+      } else if (next.length >= room) {
+        problems.push(`maksimal ${ATTACHMENT_LIMITS.maxFiles} lampiran per pesan`);
+        break;
+      } else {
+        seq.current += 1;
+        next.push({ id: `att-${seq.current}`, name: file.name, kind, mime: file.type, size: file.size, url: URL.createObjectURL(file) });
+      }
+    }
+    setPending((p) => [...p, ...next]);
+    setError(problems.join(" · "));
+  }
+
+  function remove(id: string) {
+    setPending((p) => {
+      const gone = p.find((f) => f.id === id);
+      if (gone) URL.revokeObjectURL(gone.url);
+      return p.filter((f) => f.id !== id);
+    });
+    setError("");
+  }
 
   function submit(text: string) {
-    ask(text);
+    if (!text.trim() && pending.length === 0) return;
+    if (speech.listening) speech.stop();
+    // Sent files now belong to the transcript; their URLs must stay valid.
+    ask(text, pending);
     setDraft("");
+    setPending([]);
+    setError("");
   }
 
   return (
     <div
-      style={{
-        flexShrink: 0,
-        padding: "9px 10px",
-        background: "var(--bg-surface)",
-        border: compact ? 0 : "1px solid var(--border-hairline)",
-        borderTop: "1px solid var(--border-hairline)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
+      ref={rootRef}
+      className={["chat-composer", compact && "is-compact", docked && "is-docked", dragging && "is-drop"].filter(Boolean).join(" ")}
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        addFiles(e.dataTransfer.files);
       }}
     >
-      <div className={compact ? "chat-chips-compact" : undefined} style={{ display: "flex", gap: 7, flexWrap: compact ? "nowrap" : "wrap" }}>
+      <div className={compact ? "chat-chips chat-chips-compact" : "chat-chips"}>
         {ANSWERS.map((a) => (
           <button
             key={a.id}
@@ -107,11 +272,8 @@ export function Composer({ compact = false }: { compact?: boolean }) {
             className="tap"
             title={a.question}
             style={{
-              flexShrink: compact ? 0 : undefined,
-              maxWidth: compact ? 220 : undefined,
               overflow: "hidden",
               textOverflow: "ellipsis",
-              whiteSpace: compact ? "nowrap" : undefined,
               textAlign: "left",
               padding: "5px 8px",
               fontSize: "calc(10.5px * var(--fs-scale))",
@@ -125,6 +287,45 @@ export function Composer({ compact = false }: { compact?: boolean }) {
           </button>
         ))}
       </div>
+
+      {pending.length > 0 && (
+        <ul className="chat-tray" aria-label="Lampiran yang akan dikirim">
+          {pending.map((f) => (
+            <li key={f.id} className="chat-tray-item">
+              <span className="chat-tray-thumb" aria-hidden="true">
+                {f.kind === "image" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={f.url} alt="" />
+                ) : f.kind === "video" ? (
+                  <video src={f.url} muted preload="metadata" />
+                ) : f.kind === "document" ? (
+                  <DocBadge ext={extOf(f.name)} />
+                ) : (
+                  <AudioIcon />
+                )}
+              </span>
+              <span className="chat-tray-meta">
+                <span className="truncate" title={f.name}>
+                  {f.name}
+                </span>
+                <span className="mono dim">
+                  {ATTACHMENT_LABEL[f.kind].toUpperCase()} · {formatBytes(f.size)}
+                </span>
+              </span>
+              <button type="button" className="chat-tray-x" onClick={() => remove(f.id)} aria-label={`Hapus ${f.name}`}>
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && (
+        <p role="alert" className="chat-attach-error mono">
+          {error}
+        </p>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -132,6 +333,37 @@ export function Composer({ compact = false }: { compact?: boolean }) {
         }}
         style={{ display: "flex", alignItems: "flex-end", gap: 8 }}
       >
+        <input
+          ref={fileRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          hidden
+          onChange={(e) => {
+            if (e.target.files) addFiles(e.target.files);
+            // Lets the same file be picked again after removing it.
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          className="chat-attach-btn"
+          onClick={() => fileRef.current?.click()}
+          disabled={pending.length >= ATTACHMENT_LIMITS.maxFiles}
+          aria-label="Lampirkan gambar, suara, video, atau dokumen"
+          title={`Lampirkan gambar, suara, video, atau dokumen — PDF, Word, Excel, PowerPoint, CSV, TXT (maks. ${ATTACHMENT_LIMITS.maxFiles} file, ${formatBytes(ATTACHMENT_LIMITS.maxBytes)} per file). Bisa juga seret atau tempel ke sini.`}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M10.5 4.5 5.6 9.4a1.4 1.4 0 0 0 2 2l5.2-5.2a2.8 2.8 0 0 0-4-4L3.6 7.4a4.2 4.2 0 0 0 6 6l4.4-4.4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+            />
+          </svg>
+          {pending.length > 0 && <span className="chat-attach-count mono">{pending.length}</span>}
+        </button>
         <label htmlFor={compact ? "prompt-popup" : "prompt"} className="sr-only">
           Tulis pertanyaan
         </label>
@@ -146,7 +378,20 @@ export function Composer({ compact = false }: { compact?: boolean }) {
               submit(draft);
             }
           }}
-          placeholder="Tanyakan apa saja tentang harga saham, laporan keuangan, atau proyeksi portofolio…"
+          onPaste={(e) => {
+            if (e.clipboardData.files.length === 0) return;
+            e.preventDefault();
+            addFiles(e.clipboardData.files);
+          }}
+          placeholder={
+            speech.listening
+              ? "Mendengarkan… silakan bicara"
+              : pending.length
+                ? "Tambahkan keterangan (opsional)…"
+                : compact
+                  ? "Ketik, bicara, atau lampirkan file…"
+                  : "Tanyakan apa saja tentang harga saham, laporan keuangan, atau proyeksi portofolio — ketik, bicara, atau lampirkan file…"
+          }
           style={{
             flexGrow: 1,
             minWidth: 0,
@@ -161,6 +406,26 @@ export function Composer({ compact = false }: { compact?: boolean }) {
             color: "var(--text-primary)",
           }}
         />
+        <button
+          type="button"
+          className={speech.listening ? "chat-mic-btn is-on" : "chat-mic-btn"}
+          onClick={toggleMic}
+          disabled={!speech.supported}
+          aria-pressed={speech.listening}
+          aria-label={speech.listening ? "Hentikan input suara" : "Isi pertanyaan dengan suara"}
+          title={
+            !speech.supported
+              ? "Browser ini belum mendukung input suara — gunakan Chrome, Edge, atau Safari"
+              : speech.listening
+                ? "Hentikan input suara"
+                : "Isi pertanyaan dengan suara (Bahasa Indonesia). Suara diproses oleh layanan pengenalan suara browser."
+          }
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <rect x="5.5" y="1.5" width="5" height="8" rx="2.5" fill={speech.listening ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3" />
+            <path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2.2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+        </button>
         <button
           type="submit"
           className="mono"
@@ -179,7 +444,21 @@ export function Composer({ compact = false }: { compact?: boolean }) {
           KIRIM
         </button>
       </form>
+      {!compact && (
+        <p className="chat-hint mono dim" style={{ margin: 0, fontSize: "calc(9px * var(--fs-scale))" }}>
+          LAMPIRAN: GAMBAR · SUARA · VIDEO · DOKUMEN — MAKS. {ATTACHMENT_LIMITS.maxFiles} FILE, {formatBytes(ATTACHMENT_LIMITS.maxBytes)} PER FILE. SERET, TEMPEL, ATAU KLIK
+          IKON KLIP; FILE TIDAK MENINGGALKAN BROWSER ANDA. IKON MIKROFON: DIKTE PERTANYAAN.
+        </p>
+      )}
     </div>
+  );
+}
+
+function AudioIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 16 16">
+      <path d="M2 6.5v3M5 4v8M8 2v12M11 5v6M14 7v2" stroke="var(--accent-amber)" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
   );
 }
 

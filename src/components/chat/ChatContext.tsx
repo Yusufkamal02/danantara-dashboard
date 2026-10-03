@@ -1,10 +1,18 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import { ALL_ANSWERS, CONVERSATIONS, FALLBACK, type ChatAnswer } from "@/data/chat";
+import { ALL_ANSWERS, CONVERSATIONS, FALLBACK, mediaAnswer, type ChatAnswer, type ChatAttachment } from "@/data/chat";
+
+/** A local file the user attached; `url` is an object URL, never uploaded. */
+export interface Attachment extends ChatAttachment {
+  id: string;
+  mime: string;
+  url: string;
+}
 
 export interface Turn {
   question: string;
+  attachments?: Attachment[];
   answer: ChatAnswer;
 }
 
@@ -19,7 +27,7 @@ interface ChatState {
   activeId: string;
   /** Conversations started in this browser session, newest first. */
   sessionThreads: Thread[];
-  ask: (question: string) => void;
+  ask: (question: string, attachments?: Attachment[]) => void;
   open: (id: string) => void;
   startNew: () => void;
   popupOpen: boolean;
@@ -62,14 +70,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const counter = useRef(0);
 
   const ask = useCallback(
-    (question: string) => {
+    (question: string, attachments: Attachment[] = []) => {
       const text = question.trim();
-      if (!text) return;
-      const turn = { question: text, answer: answerFor(text) };
+      if (!text && attachments.length === 0) return;
+      const turn: Turn = attachments.length
+        ? { question: text, attachments, answer: mediaAnswer(attachments, text) }
+        : { question: text, answer: answerFor(text) };
       setThreads((t) => ({ ...t, [activeId]: [...(t[activeId] ?? []), turn] }));
       // A new conversation earns a history entry on its first question.
       if (!CONVERSATIONS.some((c) => c.id === activeId)) {
-        setSessionThreads((s) => (s.some((x) => x.id === activeId) ? s : [{ id: activeId, title: text }, ...s]));
+        const title = text || `Lampiran: ${attachments[0].name}`;
+        setSessionThreads((s) => (s.some((x) => x.id === activeId) ? s : [{ id: activeId, title }, ...s]));
       }
     },
     [activeId],

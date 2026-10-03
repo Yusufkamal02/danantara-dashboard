@@ -45,6 +45,10 @@ nilainya fiktif. Situsnya publik bagi yang memegang tautan, jadi ini penting.
 
 ## Aturan yang tidak boleh dilanggar
 
+- ## Sectors API
+  Sebelum menulis atau mengubah kode yang memanggil Sectors API, baca `docs/sectors-api-notes.md`.
+  Berkas itu menimpa skill `sectors-api` bila ada konflik: gunakan API **v2** (bukan v1),
+  patuhi biaya credit, dan jangan menyimpan API key di repo (hanya `SECTORS_API_KEY` dari  `.env`). Hal yang ada di daftar "Belum terverifikasi" jangan diasumsikan; uji dengan data nyata dulu.
 - **Banner "MOCKUP PoC / data contoh" di `Shell.tsx` wajib tetap ada** dan
   tidak boleh dibuat bisa ditutup. Begitu juga `robots` noindex di
   `layout.tsx` dan `public/robots.txt`. Situs ini mengaitkan angka fiktif ke

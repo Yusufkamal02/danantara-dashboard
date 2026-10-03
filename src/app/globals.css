@@ -694,16 +694,404 @@ button {
   border-color: var(--accent-amber);
 }
 
+.chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
 /* Suggestion chips scroll sideways in the narrow popup instead of eating
    half its height. */
 .chat-chips-compact {
+  flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: thin;
   padding-bottom: 2px;
 }
+.chat-chips-compact > button {
+  flex-shrink: 0;
+  max-width: 220px;
+  white-space: nowrap;
+}
+
+/* ---------- chat attachments (image / audio / video, local only) ---------- */
+.chat-composer {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+.chat-composer.is-compact {
+  border: 0;
+  border-top: 1px solid var(--border-hairline);
+}
+
+/* ---------- Chat AI screen: the prompt box never leaves the screen ---------- */
+/* Three columns: the screen fits the window and each column scrolls on its
+   own, so the composer sits at the bottom of the transcript column. */
+@media (min-width: 1280px) {
+  .screen:has(> .chat-grid) {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 620px;
+  }
+  .chat-grid {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .chat-grid > .col {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  /* Fixed-height panels keep their height and the column scrolls instead. */
+  .chat-grid > .col > * {
+    flex-shrink: 0;
+  }
+  .chat-grid > .col > .panel-grow,
+  .chat-grid > .col > .chat-transcript {
+    flex-shrink: 1;
+    min-height: 120px;
+  }
+}
+/* Narrower: the rails stack under the transcript, so the composer docks to
+   the bottom of the viewport and the page reserves its measured height. */
+@media (max-width: 1279px) {
+  .chat-composer.is-docked {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 800;
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom));
+    border: 0;
+    border-top: 1px solid var(--accent-amber);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55);
+  }
+  .chat-grid {
+    padding-bottom: calc(var(--chat-dock-h, 150px) + 10px);
+  }
+  /* The transcript stays a window-high scroll box above the docked composer. */
+  .chat-grid .chat-transcript {
+    flex-grow: 0 !important;
+    height: calc(100vh - var(--chat-dock-h, 150px) - 24px);
+    height: calc(100dvh - var(--chat-dock-h, 150px) - 24px);
+    min-height: 260px;
+  }
+  .is-docked .chat-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+  }
+  .is-docked .chat-chips > button {
+    flex-shrink: 0;
+    max-width: 260px;
+    white-space: nowrap;
+  }
+  .is-docked .chat-hint {
+    display: none;
+  }
+}
+
+.chat-mic-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.chat-mic-btn:hover:not(:disabled) {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+}
+.chat-mic-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.chat-mic-btn.is-on {
+  color: var(--status-negative);
+  border-color: var(--status-negative);
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--status-negative) 25%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-mic-btn.is-on {
+    animation: none;
+  }
+}
+
+/* Documents: a typed badge instead of a preview. */
+.chat-doc-badge {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-violet);
+  color: var(--text-on-accent);
+  font-size: calc(8.5px * var(--fs-scale));
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.chat-doc-badge.doc-pdf {
+  background: var(--status-negative);
+}
+.chat-doc-badge.doc-doc,
+.chat-doc-badge.doc-docx,
+.chat-doc-badge.doc-odt,
+.chat-doc-badge.doc-rtf {
+  background: var(--accent-blue);
+}
+.chat-doc-badge.doc-xls,
+.chat-doc-badge.doc-xlsx,
+.chat-doc-badge.doc-ods,
+.chat-doc-badge.doc-csv {
+  background: var(--status-positive);
+}
+.chat-doc-badge.doc-ppt,
+.chat-doc-badge.doc-pptx,
+.chat-doc-badge.doc-odp {
+  background: var(--accent-orange);
+}
+.chat-doc {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.chat-doc:hover {
+  color: var(--text-primary);
+  background: var(--bg-row-alt);
+}
+.chat-doc-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: calc(11px * var(--fs-scale));
+}
+.chat-doc-meta .mono {
+  font-size: calc(9px * var(--fs-scale));
+  letter-spacing: 0.04em;
+}
+.chat-composer.is-drop::after {
+  content: "LEPASKAN UNTUK MELAMPIRKAN";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border: 1px dashed var(--accent-amber);
+  color: var(--accent-amber);
+  font-family: var(--font-mono);
+  font-size: calc(11px * var(--fs-scale));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.94;
+  pointer-events: none;
+}
+
+.chat-attach-btn {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.chat-attach-btn:hover:not(:disabled) {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+}
+.chat-attach-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.chat-attach-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-amber);
+  color: var(--text-on-accent);
+  font-size: calc(9px * var(--fs-scale));
+  font-weight: 700;
+}
+
+/* Pending files: a sideways strip so it never eats the popup's height. */
+.chat-tray {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 2px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.chat-tray-item {
+  flex-shrink: 0;
+  width: 190px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 4px 4px 4px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent-amber);
+}
+.chat-tray-thumb {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bg-row-alt);
+}
+.chat-tray-thumb img,
+.chat-tray-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.chat-tray-meta {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: calc(10.5px * var(--fs-scale));
+}
+.chat-tray-meta .mono {
+  font-size: calc(8.5px * var(--fs-scale));
+  letter-spacing: 0.04em;
+}
+.chat-tray-x {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-size: calc(10px * var(--fs-scale));
+  cursor: pointer;
+}
+.chat-tray-x:hover {
+  color: var(--status-negative);
+  border-color: var(--status-negative);
+}
+.chat-attach-error {
+  margin: 0;
+  color: var(--status-negative);
+  font-size: calc(9.5px * var(--fs-scale));
+}
+
+/* Sent media inside the question bubble. */
+.chat-q-media {
+  width: 100%;
+  max-width: 420px !important;
+}
+.chat-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.chat-media:last-child {
+  margin-bottom: 0;
+}
+.chat-media-item {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-input);
+  border: 1px solid var(--border-hairline);
+}
+/* Audio and video want the full bubble width to stay usable. */
+.chat-media-audio,
+.chat-media-video,
+.chat-media-document {
+  grid-column: 1 / -1;
+}
+.chat-media-image a {
+  display: block;
+  line-height: 0;
+}
+.chat-media-item img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+.chat-media-item video {
+  width: 100%;
+  max-height: 240px;
+  display: block;
+  background: var(--bg-base);
+}
+.chat-media-item audio {
+  width: 100%;
+  height: 36px;
+  display: block;
+  padding: 4px;
+}
+.chat-media-item figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  font-size: calc(9px * var(--fs-scale));
+}
+.chat-pop .chat-q-media {
+  max-width: 92% !important;
+}
+.chat-pop .chat-media-item img {
+  height: 96px;
+}
+.chat-pop .chat-media-item video {
+  max-height: 180px;
+}
 
 /* Phone: the popup becomes a bottom sheet across the full width. */
 @media (max-width: 640px) {
+  .chat-q-media {
+    max-width: 92% !important;
+  }
+  .chat-tray-item {
+    width: 170px;
+  }
   .chat-fab {
     right: 10px;
     bottom: 10px;

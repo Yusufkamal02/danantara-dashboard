@@ -31,7 +31,7 @@ export default function ChatPage() {
       meta="AI CHAT · SUMBER: XBRL + IDX API + MODEL · 6.188 DOKUMEN TERINDEKS · JAWABAN SELALU BERSUMBER"
     >
       <main
-        className="main-grid"
+        className="main-grid chat-grid"
         style={{ "--col-left": "262px", "--col-right": "330px" } as React.CSSProperties}
       >
         {/* ---------------- left ---------------- */}
@@ -129,7 +129,7 @@ export default function ChatPage() {
         {/* ---------------- transcript ---------------- */}
         <div className="col col-main">
           <Transcript />
-          <Composer />
+          <Composer docked />
         </div>
 
         {/* ---------------- context ---------------- */}
